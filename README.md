@@ -51,53 +51,6 @@ git push origin main
 # Ve a Settings → Pages → Source: main branch → Save
 ```
 
-### Opción 2: Repo existente (recomendado para oxiacycles.com)
-
-Si quieres hostearlo en un subdominio de oxiacycles.com:
-
-```bash
-# 1. Ve a tu repo de oxiacycles.com
-cd oxiacycles.com
-
-# 2. Crea una carpeta para el proyecto
-mkdir nostr
-cp /ruta/a/index.html nostr/
-
-# 3. Configura el dominio personalizado
-# En GitHub Settings → Pages → Custom domain: nostr.oxiacycles.com
-
-# 4. Añade registro DNS en tu proveedor:
-# CNAME: nostr.oxiacycles.com → TU_USUARIO.github.io
-```
-
-## 🌐 Dominios recomendados
-
-Basado en búsquedas SEO en español:
-
-### Opción A: `nostr-facil.com` / `.es`
-- ✅ Búsquedas: "nostr facil", "nostr fácil"
-- ✅ Memorable y directo
-- ✅ Disponibilidad: [Comprobar en Namecheap](https://www.namecheap.com)
-
-### Opción B: `aprendenostr.com` / `.es`
-- ✅ Búsquedas: "aprender nostr", "nostr tutorial"
-- ✅ SEO friendly
-- ✅ Intent-driven
-
-### Opción C: `nostrapp.es`
-- ✅ Búsquedas: "nostr app", "nostr aplicacion"
-- ✅ Corto y pegadizo
-
-### Opción D: Subdominio de Oxia
-- `nostr.oxiacycles.com`
-- ✅ No requiere comprar dominio
-- ✅ Aprovecha autoridad de oxiacycles.com
-- ⚠️ Menos específico para SEO Nostr
-
-## 🔧 Personalización necesaria
-
-Antes de publicar, edita estos placeholders en `index.html`:
-
 ### 1. Meta tags (línea ~13)
 ```html
 <meta property="og:url" content="https://tudominio.com">
