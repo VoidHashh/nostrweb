@@ -1,12 +1,18 @@
 {
-  "updated_at": "2026-02-11T13:51:45.417570+00:00",
-  "total_profiles": 1,
+  "updated_at": "2026-02-11T13:52:01.403037+00:00",
+  "total_profiles": 2,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
       "display_name": "crackloss",
       "njump_url": "https://njump.me/npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
       "added_at": "2026-02-11T13:17:24.535789+00:00"
+    },
+    {
+      "npub": "npub1hcnntn7hnwe4punz62favp6fz9r3j5exw0wmxpaj7hgfyqypxqzqpxqygc",
+      "display_name": "BitKOKP",
+      "njump_url": "https://njump.me/npub1hcnntn7hnwe4punz62favp6fz9r3j5exw0wmxpaj7hgfyqypxqzqpxqygc",
+      "added_at": "2026-02-11T13:51:45.068585+00:00"
     }
   ]
 }
