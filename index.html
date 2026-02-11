@@ -855,6 +855,7 @@
                     <a href="#seguridad">Seguridad</a>
                     <a href="#faq">FAQ</a>
                     <a href="#recursos">Recursos</a>
+                    <a href="/directorio/" style="color: var(--accent);">Directorio</a>
                 </nav>
             </div>
         </div>
@@ -1250,23 +1251,43 @@
                     <tbody>
                         <tr>
                             <td>
+                                <div class="wallet-name">Alby Hub + Alby Go</div>
+                                <span class="wallet-type type-noncustodial">No-custodial</span>
+                            </td>
+                            <td>Web + Móvil</td>
+                            <td>Multi</td>
+                            <td>Bajo</td>
+                            <td>La mejor opción para zaps. Soporte NWC nativo (one-tap zaps). Alby Hub es el nodo, Alby Go la app móvil. También gestiona claves Nostr.</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="wallet-name">CoinOS</div>
+                                <span class="wallet-type type-custodial">Custodial</span>
+                            </td>
+                            <td>Web</td>
+                            <td>Navegador</td>
+                            <td style="color: var(--success);">Muy bajo</td>
+                            <td>La más fácil para empezar. Registro con email o Nostr. Soporte NWC para zaps automáticos. Sin restricciones geográficas.</td>
+                        </tr>
+                        <tr>
+                            <td>
                                 <div class="wallet-name">Wallet of Satoshi</div>
                                 <span class="wallet-type type-custodial">Custodial</span>
                             </td>
                             <td>Móvil</td>
                             <td>iOS/Android</td>
                             <td style="color: var(--success);">0% zaps internos</td>
-                            <td>La más fácil para empezar. Muy popular.</td>
+                            <td>Muy popular y sencilla. <span style="color: var(--warning); font-size: 0.85rem;">⚠️ No disponible en España.</span> Sin soporte NWC (zaps manuales).</td>
                         </tr>
                         <tr>
                             <td>
-                                <div class="wallet-name">Alby</div>
-                                <span class="wallet-type type-custodial">Custodial</span>
+                                <div class="wallet-name">Minibits</div>
+                                <span class="wallet-type type-noncustodial">No-custodial</span>
                             </td>
-                            <td>Extensión</td>
-                            <td>Navegador</td>
-                            <td>Bajo</td>
-                            <td>Ideal para web. También gestiona nsec.</td>
+                            <td>Móvil</td>
+                            <td>Android</td>
+                            <td>Muy bajo</td>
+                            <td>Basada en Cashu (eCash). Soporte NWC. Convierte zaps automáticamente. Buena privacidad.</td>
                         </tr>
                         <tr>
                             <td>
@@ -1276,7 +1297,7 @@
                             <td>Móvil</td>
                             <td>iOS/Android</td>
                             <td style="color: var(--warning);">~4 sats/zap</td>
-                            <td>Autocustodia real. Gestión de canales automática.</td>
+                            <td>Excelente autocustodia Lightning, pero <span style="color: var(--warning); font-size: 0.85rem;">⚠️ sin soporte NWC</span>. Los zaps requieren confirmación manual. Mejor como wallet de ahorro.</td>
                         </tr>
                         <tr>
                             <td>
@@ -1287,16 +1308,6 @@
                             <td>iOS/Android</td>
                             <td>Variable</td>
                             <td>Completa pero más técnica. Para avanzados.</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="wallet-name">Minibits</div>
-                                <span class="wallet-type type-noncustodial">No-custodial</span>
-                            </td>
-                            <td>Móvil</td>
-                            <td>Android</td>
-                            <td>Muy bajo</td>
-                            <td>Basada en Cashu (eCash). Convierte zaps automáticamente.</td>
                         </tr>
                         <tr>
                             <td>
@@ -1311,28 +1322,28 @@
                         <tr>
                             <td>
                                 <div class="wallet-name">Blink</div>
-                                <span class="wallet-type type-noncustodial">No-custodial</span>
+                                <span class="wallet-type type-custodial">Custodial</span>
                             </td>
                             <td>Móvil</td>
                             <td>iOS/Android</td>
                             <td>Bajo</td>
-                            <td>Estable y confiable para transacciones diarias.</td>
+                            <td>Estable para transacciones diarias. Sin soporte NWC directo.</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <div class="success-box" style="margin-top: 30px;">
-                    <strong>Ruta recomendada:</strong> Empieza con Wallet of Satoshi (0 complicaciones) → cuando te sientas cómodo, migra a Phoenix para autocustodia real.
+                    <strong>Ruta recomendada:</strong> Empieza con CoinOS (registro rápido, soporte NWC, zaps automáticos) → cuando quieras autocustodia, monta un Alby Hub con Alby Go en el móvil. <span style="color: var(--text-secondary); font-size: 0.9rem;">Phoenix es excelente para autocustodia Lightning, pero no soporta NWC: los zaps requieren confirmación manual cada vez.</span>
                 </div>
 
                 <h3 style="margin-top: 60px;">Activar zaps en tu perfil</h3>
                 <div class="steps">
                     <div class="step">
                         <h3>Obtén una Lightning Address</h3>
-                        <p>Al instalar tu wallet, automáticamente te asigna una <strong>Lightning Address</strong> (algo como: nombre@wallet.com). Es como un alias para recibir pagos.</p>
+                        <p>Al instalar tu wallet, automáticamente te asigna una <strong>Lightning Address</strong> (algo como: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2e4041434c5c4b6e594f42424b5a004d4143">[email&#160;protected]</a>). Es como un alias para recibir pagos.</p>
                         <div class="key-example" style="margin-top: 15px;">
                             <span class="key-label">Ejemplo:</span>
-                            tunombre@walletofsatoshi.com
+                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="196d6c7776747b6b7c596e7875757c6d767f6a786d766a7170377a7674">[email&#160;protected]</a>
                         </div>
                     </div>
 
@@ -1707,7 +1718,7 @@
                     <div class="card">
                         <h3 style="margin-top: 0;">Con NIP-05 ✓</h3>
                         <div class="key-example">
-                            nombre@tudominio.com
+                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="95fbfaf8f7e7f0d5e1e0f1faf8fcfbfcfabbf6faf8">[email&#160;protected]</a>
                         </div>
                         <p style="margin-top: 15px; color: var(--text-secondary);">Fácil de recordar y verificar</p>
                     </div>
@@ -1725,7 +1736,7 @@
                         <div class="client-item">
                             <div class="client-info">
                                 <h4>zaps.lol</h4>
-                                <p>Gratis, algo como nombre@zaps.lol. Rápido y fácil.</p>
+                                <p>Gratis, algo como <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f799989a958592b78d968784d99b989b">[email&#160;protected]</a>. Rápido y fácil.</p>
                             </div>
                             <a href="https://zaps.lol/" target="_blank" class="client-link">Obtener →</a>
                         </div>
@@ -1771,7 +1782,7 @@
 
                         <div class="step">
                             <h3>Añádelo a tu perfil</h3>
-                            <p>En tu cliente Nostr, campo NIP-05: <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-family: monospace;">tunombre@tudominio.com</code></p>
+                            <p>En tu cliente Nostr, campo NIP-05: <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-family: monospace;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e397968d8c8e819186a39796878c8e8a8d8a8ccd808c8e">[email&#160;protected]</a></code></p>
                         </div>
                     </div>
                 </div>
@@ -1802,7 +1813,7 @@
                                 <li><strong>Zap expirado:</strong> Las facturas Lightning tienen tiempo límite. Si tardas mucho en confirmar, el zap falla. Los sats NO salen de la wallet del emisor.</li>
                                 <li><strong>Relay no propaga el evento:</strong> Tu cliente puede no estar conectado al relay correcto. Añade más relays a tu configuración.</li>
                             </ul>
-                            <p style="margin-top: 15px;"><strong>Solución rápida:</strong> Prueba con Wallet of Satoshi (custodial) primero. Es plug & play, sin gestión de canales.</p>
+                            <p style="margin-top: 15px;"><strong>Solución rápida:</strong> Prueba con CoinOS (custodial, web) o Alby Hub + Alby Go. Ambas soportan NWC para zaps automáticos sin confirmación manual. <span style="color: var(--warning);">⚠️ Phoenix no soporta NWC; Wallet of Satoshi no está disponible en España.</span></p>
                         </div>
                     </div>
 
@@ -1991,6 +2002,14 @@
 
                 <div class="info-box" style="margin-top: 40px;">
                     <strong>Tip:</strong> Busca también los hashtags <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px;">#hispano</code> y <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px;">#castellano</code> para encontrar más contenido en español.
+                </div>
+
+                <!-- Enlace al directorio -->
+                <div style="margin-top: 40px; text-align: center;">
+                    <a href="/directorio/" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #c44dff 0%, #8b5cf6 100%); color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-size: 1.05rem; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(196, 77, 255, 0.3);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(196, 77, 255, 0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(196, 77, 255, 0.3)'">
+                        📋 Directorio de la comunidad
+                    </a>
+                    <p style="margin-top: 12px; color: var(--text-secondary); font-size: 0.9rem;">Perfiles reales de nuestra comunidad de Telegram. ¡Únete y aparece!</p>
                 </div>
             </div>
         </section>
@@ -2224,7 +2243,7 @@
                     <div style="margin-top: 15px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px;">Lightning Address:</p>
                         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <code id="lightning-address" style="color: var(--accent); font-size: 0.9rem; word-break: break-all; flex: 1;">applealpaca64@phoenixwallet.me</code>
+                            <code id="lightning-address" style="color: var(--accent); font-size: 0.9rem; word-break: break-all; flex: 1;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="85e4f5f5e9e0e4e9f5e4e6e4b3b1c5f5edeae0ebecfdf2e4e9e9e0f1abe8e0">[email&#160;protected]</a></code>
                             <button onclick="copyLightning()" class="copy-btn">
                                 📋 Copiar
                             </button>
@@ -2259,7 +2278,7 @@
         </div>
     </footer>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // Copy Lightning address
         function copyLightning() {
             const address = document.getElementById('lightning-address').textContent;
@@ -2388,30 +2407,3 @@
                     alert('¡Gracias por tu interés! La newsletter estará disponible pronto.');
                     this.reset();
                 });
-            }
-        });
-
-        // Tab functionality
-        function openTab(evt, tabName) {
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-
-            const tabs = document.getElementsByClassName('tab');
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-
-            document.getElementById(tabName).classList.add('active');
-            evt.currentTarget.classList.add('active');
-        }
-
-        // Collapsible functionality
-        function toggleCollapsible(header) {
-            const collapsible = header.parentElement;
-            collapsible.classList.toggle('active');
-        }
-    </script>
-</body>
-</html>
