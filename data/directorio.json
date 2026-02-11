@@ -1,5 +1,12 @@
 {
-  "updated_at": "2026-02-11T13:17:24.853917+00:00",
-  "total_profiles": 0,
-  "profiles": []
+  "updated_at": "2026-02-11T13:17:29.492802+00:00",
+  "total_profiles": 1,
+  "profiles": [
+    {
+      "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
+      "display_name": "crackloss",
+      "njump_url": "https://njump.me/npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
+      "added_at": "2026-02-11T13:17:24.535789+00:00"
+    }
+  ]
 }
