@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio Nostr | NostrFácil</title>
+    <meta name="description" content="Directorio de perfiles Nostr de la comunidad hispanohablante. Encuentra y sigue a otros usuarios de Nostr en español.">
+    <meta property="og:title" content="Directorio Nostr | NostrFácil">
+    <meta property="og:description" content="Directorio de perfiles Nostr de la comunidad hispanohablante.">
+    <meta property="og:url" content="https://nostrfacil.com/directorio">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1e1e1e;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --accent: #c44dff;
+            --accent-hover: #d470ff;
+            --accent-glow: rgba(196, 77, 255, 0.15);
+            --border: #2a2a2a;
+            --success: #4ade80;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(20, 20, 20, 0.9);
+        }
+
+        .header-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .header a:hover {
+            color: var(--accent-hover);
+        }
+
+        .header .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .header .logo span {
+            color: var(--accent);
+        }
+
+        /* ─── Main ─── */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ─── Stats ─── */
+        .stats {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ─── Search ─── */
+        .search-box {
+            margin-bottom: 2rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.85rem 1.2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* ─── Profile list ─── */
+        .profile-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .profile-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+
+        .profile-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .profile-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            color: var(--accent);
+        }
+
+        .profile-details {
+            min-width: 0;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-npub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+
+        .profile-link {
+            flex-shrink: 0;
+        }
+
+        .profile-link a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .profile-link a:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* ─── Empty & Loading states ─── */
+        .loading, .empty, .error {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .loading .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error { color: #f87171; }
+
+        /* ─── CTA ─── */
+        .cta {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .cta p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .cta a {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .cta a:hover {
+            background: var(--accent-hover);
+        }
+
+        /* ─── Footer ─── */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .updated-at {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 500px) {
+            .hero h1 { font-size: 1.5rem; }
+            .stats { flex-direction: row; }
+            .stat-card { flex: 1; padding: 0.75rem; min-width: 0; }
+            .stat-card .number { font-size: 1.4rem; }
+            .profile-card { padding: 0.85rem 1rem; }
+            .profile-npub { max-width: 140px; }
+            .profile-link a { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-inner">
+            <a href="https://nostrfacil.com" class="logo">Nostr<span>Fácil</span></a>
+            <a href="https://t.me/nostrespanol">📱 Únete al grupo</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>🟣 Directorio <span>Nostr</span></h1>
+            <p>Perfiles de la comunidad hispanohablante. Sígueles y construye tu red en Nostr.</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <span class="number" id="total-count">-</span>
+                <span class="label">Perfiles</span>
+            </div>
+            <div class="stat-card">
+                <span class="number" id="last-update">-</span>
+                <span class="label">Actualizado</span>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 Buscar por nombre o npub...">
+        </div>
+
+        <div id="directory" class="profile-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Cargando directorio...</p>
+            </div>
+        </div>
+
+        <div class="cta">
+            <p>¿Quieres aparecer en el directorio? Únete a nuestro grupo de Telegram y comparte tu npub.</p>
+            <a href="https://t.me/nostrespanol">Unirme al grupo →</a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        Hecho con 💜 por <a href="https://nostrfacil.com">NostrFácil</a> para la comunidad Nostr hispanohablante
+    </footer>
+
+    <script>
+        const JSON_URL = 'https://nostrfacil.com/data/directorio.json';
+
+        let allProfiles = [];
+
+        async function loadDirectory() {
+            const container = document.getElementById('directory');
+            try {
+                const res = await fetch(JSON_URL + '?t=' + Date.now());
+                if (!res.ok) throw new Error('No se pudo cargar');
+                const data = await res.json();
+
+                allProfiles = data.profiles || [];
+
+                // Stats
+                document.getElementById('total-count').textContent = data.total_profiles || 0;
+                const date = new Date(data.updated_at);
+                document.getElementById('last-update').textContent =
+                    date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+
+                renderProfiles(allProfiles);
+
+            } catch (err) {
+                container.innerHTML =
+                    '<div class="empty"><p>No se pudo cargar el directorio. Inténtalo más tarde.</p></div>';
+            }
+        }
+
+        function renderProfiles(profiles) {
+            const container = document.getElementById('directory');
+
+            if (profiles.length === 0) {
+                container.innerHTML =
+                    '<div class="empty"><p>No se encontraron perfiles.</p></div>';
+                return;
+            }
+
+            container.innerHTML = profiles.map((p, i) => {
+                const initial = (p.display_name || '?')[0].toUpperCase();
+                const npubShort = p.npub.slice(0, 20) + '...';
+                return `
+                    <div class="profile-card">
+                        <div class="profile-info">
+                            <div class="profile-avatar">${initial}</div>
+                            <div class="profile-details">
+                                <div class="profile-name">${escapeHtml(p.display_name || 'Anónimo')}</div>
+                                <div class="profile-npub">${npubShort}</div>
+                            </div>
+                        </div>
+                        <div class="profile-link">
+                            <a href="${p.njump_url}" target="_blank" rel="noopener">Ver perfil →</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Search
+        document.getElementById('search').addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            if (!query) {
+                renderProfiles(allProfiles);
+                return;
+            }
+            const filtered = allProfiles.filter(p =>
+                (p.display_name || '').toLowerCase().includes(query) ||
+                p.npub.toLowerCase().includes(query)
+            );
+            renderProfiles(filtered);
+        });
+
+        loadDirectory();
+    </script>
+</body>
+</html>
