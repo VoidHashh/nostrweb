@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-11T22:24:50.359044+00:00",
-  "total_profiles": 9,
+  "updated_at": "2026-02-11T22:25:16.363529+00:00",
+  "total_profiles": 10,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -55,6 +55,12 @@
       "display_name": "Nailuj2k",
       "njump_url": "https://njump.me/npub1vyqw3rqydr4286hgce06uymmjn8fk92r32mkuzyc6n84gfw5jzjqpr36nv",
       "added_at": "2026-02-11T21:07:49.697642+00:00"
+    },
+    {
+      "npub": "npub1uh5zxkl9tadvwmumd5e43e5ljh26zm0shsanld3xjn2lrpgt8huqq6e8rm",
+      "display_name": "PATRIOTA58",
+      "njump_url": "https://njump.me/npub1uh5zxkl9tadvwmumd5e43e5ljh26zm0shsanld3xjn2lrpgt8huqq6e8rm",
+      "added_at": "2026-02-11T22:24:49.970613+00:00"
     }
   ]
 }
