@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-11T14:19:31.001704+00:00",
-  "total_profiles": 2,
+  "updated_at": "2026-02-11T14:19:34.745025+00:00",
+  "total_profiles": 3,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -13,6 +13,12 @@
       "display_name": "BitKOKP",
       "njump_url": "https://njump.me/npub1hcnntn7hnwe4punz62favp6fz9r3j5exw0wmxpaj7hgfyqypxqzqpxqygc",
       "added_at": "2026-02-11T13:51:45.068585+00:00"
+    },
+    {
+      "npub": "npub19qv3n67vh64adv9emkc86qkdz6t7n8nn4psg4svldrejf40de2uqltuv0e",
+      "display_name": "FuckGoku",
+      "njump_url": "https://njump.me/npub19qv3n67vh64adv9emkc86qkdz6t7n8nn4psg4svldrejf40de2uqltuv0e",
+      "added_at": "2026-02-11T14:19:30.479306+00:00"
     }
   ]
 }
