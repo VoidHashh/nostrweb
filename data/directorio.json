@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-11T21:01:50.348967+00:00",
-  "total_profiles": 6,
+  "updated_at": "2026-02-11T21:02:30.209857+00:00",
+  "total_profiles": 7,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -37,6 +37,12 @@
       "display_name": "misantropitecus",
       "njump_url": "https://njump.me/npub19cw8klt35rmjq5uj2najrgy8unakuf38vspc244vq0rj4es764ws77k5kz",
       "added_at": "2026-02-11T15:43:03.151073+00:00"
+    },
+    {
+      "npub": "npub1vvwdc3edn4e22062dcryft4eaxlpd0nmgmh8adacp5afzvvc40yqa4yjhp",
+      "display_name": "pobreboomer",
+      "njump_url": "https://njump.me/npub1vvwdc3edn4e22062dcryft4eaxlpd0nmgmh8adacp5afzvvc40yqa4yjhp",
+      "added_at": "2026-02-11T21:01:49.983093+00:00"
     }
   ]
 }
