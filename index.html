@@ -2213,16 +2213,11 @@
 
                     <!-- Formulario MailerLite (diseño propio) -->
                     <form id="newsletter-form" 
-                          class="ml-block-form" 
-                          action="https://assets.mailerlite.com/jsonp/2107412/forms/179129720617567251/subscribe" 
-                          data-code="" 
-                          method="post" 
-                          target="_blank"
                           style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto; flex-wrap: wrap;">
                         
                         <input 
+                            id="nl-email"
                             type="email" 
-                            name="fields[email]"
                             placeholder="Tu email"
                             aria-label="email"
                             aria-required="true"
@@ -2230,9 +2225,7 @@
                             required
                             style="flex: 1; min-width: 200px; padding: 14px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;"
                         >
-                        <input type="hidden" name="ml-submit" value="1">
-                        <input type="hidden" name="anticsrf" value="true">
-                        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+                        <button type="submit" class="btn btn-primary" id="nl-btn" style="white-space: nowrap;">
                             Suscribirme
                         </button>
                     </form>
@@ -2240,6 +2233,11 @@
                     <!-- Mensaje de éxito -->
                     <div id="newsletter-success" style="display: none; margin-top: 20px; padding: 15px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); border-radius: 8px;">
                         <p style="color: var(--success); font-weight: 600; margin: 0;">✓ ¡Revisa tu email para confirmar la suscripción!</p>
+                    </div>
+
+                    <!-- Mensaje de error -->
+                    <div id="newsletter-error" style="display: none; margin-top: 20px; padding: 15px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); border-radius: 8px;">
+                        <p style="color: var(--danger); font-weight: 600; margin: 0;">✗ Algo falló. Inténtalo de nuevo.</p>
                     </div>
 
                     <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 15px;">
@@ -2420,15 +2418,38 @@
                 });
             });
 
-            // Newsletter form - mostrar éxito al enviar
+            // Newsletter form - envío AJAX a MailerLite
             const newsletterForm = document.getElementById('newsletter-form');
             if (newsletterForm) {
-                newsletterForm.addEventListener('submit', function() {
-                    // Mostrar mensaje de éxito tras breve delay (el form se envía a MailerLite)
-                    setTimeout(function() {
-                        document.getElementById('newsletter-success').style.display = 'block';
+                newsletterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('nl-email').value;
+                    const btn = document.getElementById('nl-btn');
+                    const successDiv = document.getElementById('newsletter-success');
+                    const errorDiv = document.getElementById('newsletter-error');
+                    
+                    btn.textContent = 'Enviando...';
+                    btn.disabled = true;
+                    successDiv.style.display = 'none';
+                    errorDiv.style.display = 'none';
+
+                    const formData = new FormData();
+                    formData.append('fields[email]', email);
+                    formData.append('ml-submit', '1');
+                    formData.append('anticsrf', 'true');
+
+                    fetch('https://assets.mailerlite.com/jsonp/2107412/forms/179129720617567251/subscribe', {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'no-cors'
+                    }).then(function() {
                         newsletterForm.style.display = 'none';
-                    }, 500);
+                        successDiv.style.display = 'block';
+                    }).catch(function() {
+                        errorDiv.style.display = 'block';
+                        btn.textContent = 'Suscribirme';
+                        btn.disabled = false;
+                    });
                 });
             }
         });
