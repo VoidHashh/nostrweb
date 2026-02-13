@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-13T10:42:12.684656+00:00",
-  "total_profiles": 12,
+  "updated_at": "2026-02-13T10:42:22.258977+00:00",
+  "total_profiles": 13,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -73,6 +73,12 @@
       "display_name": "flatFeather",
       "njump_url": "https://njump.me/npub1qmekr0899lxlhkmz4hxe7t8cmg233u90zcjy08pdturh3c0vangs5mn9mt",
       "added_at": "2026-02-13T09:36:06.373561+00:00"
+    },
+    {
+      "npub": "npub19zqd5fjqejtp9zfk0yff9wz5w5j0szne7eygyfchp5qvzll87suqe50lyu",
+      "display_name": "SvenS101",
+      "njump_url": "https://njump.me/npub19zqd5fjqejtp9zfk0yff9wz5w5j0szne7eygyfchp5qvzll87suqe50lyu",
+      "added_at": "2026-02-13T10:42:12.342301+00:00"
     }
   ]
 }
