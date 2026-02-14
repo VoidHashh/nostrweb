@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-14T11:11:49.641956+00:00",
-  "total_profiles": 15,
+  "updated_at": "2026-02-14T11:11:57.296154+00:00",
+  "total_profiles": 16,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -91,6 +91,12 @@
       "display_name": "LiberBit",
       "njump_url": "https://njump.me/npub1lsd5snac2kvd8j5hyypggetv6uapwq4rtmnqgpx95vtm26e0fszqfku9lk",
       "added_at": "2026-02-14T10:38:58.612633+00:00"
+    },
+    {
+      "npub": "npub12hje4jvfxkjpn9pq6xlakfzthnyu7gl0xpv2ly0jnjjcuykv26esf2s5e5",
+      "display_name": "Enrique747",
+      "njump_url": "https://njump.me/npub12hje4jvfxkjpn9pq6xlakfzthnyu7gl0xpv2ly0jnjjcuykv26esf2s5e5",
+      "added_at": "2026-02-14T11:11:49.278835+00:00"
     }
   ]
 }
