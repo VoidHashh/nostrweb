@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-14T17:50:55.163242+00:00",
-  "total_profiles": 17,
+  "updated_at": "2026-02-14T17:50:58.546571+00:00",
+  "total_profiles": 18,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -103,6 +103,12 @@
       "display_name": "j4b4t0",
       "njump_url": "https://njump.me/npub1uay28kq0hq8xr98k2uqk0vjrzqz8fdjh38esz4acdtk045lmgzpqn9naxf",
       "added_at": "2026-02-14T17:35:23.606869+00:00"
+    },
+    {
+      "npub": "npub1wj2t52l7nk3tuf9uqrshlnauc999nz2cq96cee4p7q4datcvk9nqznyhd4",
+      "display_name": "Albertsn",
+      "njump_url": "https://njump.me/npub1wj2t52l7nk3tuf9uqrshlnauc999nz2cq96cee4p7q4datcvk9nqznyhd4",
+      "added_at": "2026-02-14T17:50:54.697438+00:00"
     }
   ]
 }
