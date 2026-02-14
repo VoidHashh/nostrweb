@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-14T10:38:59.069260+00:00",
-  "total_profiles": 14,
+  "updated_at": "2026-02-14T10:39:06.465384+00:00",
+  "total_profiles": 15,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -85,6 +85,12 @@
       "display_name": "hermestus",
       "njump_url": "https://njump.me/npub15c7h4z0dh65vvaxnyvwzp3qh0u0r726lwwlc6rrnctnrufcd8dds9tggnm",
       "added_at": "2026-02-13T14:57:33.841975+00:00"
+    },
+    {
+      "npub": "npub1lsd5snac2kvd8j5hyypggetv6uapwq4rtmnqgpx95vtm26e0fszqfku9lk",
+      "display_name": "LiberBit",
+      "njump_url": "https://njump.me/npub1lsd5snac2kvd8j5hyypggetv6uapwq4rtmnqgpx95vtm26e0fszqfku9lk",
+      "added_at": "2026-02-14T10:38:58.612633+00:00"
     }
   ]
 }
