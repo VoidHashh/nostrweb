@@ -1,6 +1,7 @@
 /**
- * NostrFácil - Amber Follow (NIP-55)
- * Soporte de follow para Android vía Amber signer.
+ * NostrFácil - Amber Follow (NIP-55) v5
+ * Usa <a> tags para lanzar nostrsigner: (compatible con Brave, Vanadium, etc.)
+ * Procesa callbacks de Amber al inicio, antes de cualquier delay.
  */
 
 (function () {
@@ -26,12 +27,13 @@
     ];
     const RELAY_TIMEOUT = 8000;
     const CALLBACK_BASE = window.location.origin + window.location.pathname;
-    const STORAGE_KEY_PUBKEY = 'nostrfacil_amber_pubkey';
-    const STORAGE_KEY_PENDING = 'nostrfacil_amber_pending';
-    const STORAGE_KEY_CONTACTS = 'nostrfacil_amber_contacts';
-    const STORAGE_KEY_CONTACT_EVENT = 'nostrfacil_amber_contact_event';
+    const SK = {
+        PUBKEY: 'nostrfacil_amber_pubkey',
+        PENDING: 'nostrfacil_amber_pending',
+        CONTACTS: 'nostrfacil_amber_contacts',
+        CONTACT_EVENT: 'nostrfacil_amber_contact_event',
+    };
 
-    // ─── State ───────────────────────────────────────────────
     let userPubkeyHex = null;
     let userContacts = new Set();
     let userContactEvent = null;
@@ -39,43 +41,26 @@
 
     // ─── Bech32 → Hex ────────────────────────────────────────
     const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-
     function bech32Decode(str) {
         str = str.toLowerCase();
         const pos = str.lastIndexOf('1');
         if (pos < 1) return null;
-        const dataChars = str.slice(pos + 1);
         const data = [];
-        for (let i = 0; i < dataChars.length; i++) {
-            const idx = CHARSET.indexOf(dataChars[i]);
+        for (let i = pos + 1; i < str.length; i++) {
+            const idx = CHARSET.indexOf(str[i]);
             if (idx === -1) return null;
             data.push(idx);
         }
         return { hrp: str.slice(0, pos), data: convertBits(data.slice(0, -6), 5, 8, false) };
     }
-
-    function convertBits(data, fromBits, toBits, pad) {
-        let acc = 0, bits = 0;
-        const result = [];
-        const maxv = (1 << toBits) - 1;
-        for (let i = 0; i < data.length; i++) {
-            acc = (acc << fromBits) | data[i];
-            bits += fromBits;
-            while (bits >= toBits) {
-                bits -= toBits;
-                result.push((acc >> bits) & maxv);
-            }
-        }
-        if (pad && bits > 0) result.push((acc << (toBits - bits)) & maxv);
-        return result;
+    function convertBits(data, from, to, pad) {
+        let acc = 0, bits = 0; const r = [], maxv = (1 << to) - 1;
+        for (const v of data) { acc = (acc << from) | v; bits += from; while (bits >= to) { bits -= to; r.push((acc >> bits) & maxv); } }
+        if (pad && bits > 0) r.push((acc << (to - bits)) & maxv);
+        return r;
     }
-
     function npubToHex(npub) {
-        try {
-            const decoded = bech32Decode(npub);
-            if (!decoded || decoded.hrp !== 'npub') return null;
-            return decoded.data.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch { return null; }
+        try { const d = bech32Decode(npub); if (!d || d.hrp !== 'npub') return null; return d.data.map(b => b.toString(16).padStart(2, '0')).join(''); } catch { return null; }
     }
 
     // ─── Detection ───────────────────────────────────────────
@@ -83,207 +68,160 @@
     function hasNip07() { return typeof window.nostr !== 'undefined' && window.nostr !== null; }
 
     // ─── Relay communication ─────────────────────────────────
-    function queryRelay(relayUrl, filter) {
-        return new Promise((resolve) => {
-            let ws;
+    function queryRelay(url, filter) {
+        return new Promise(resolve => {
             const subId = 'ab_' + Math.random().toString(36).slice(2, 8);
-            const events = [];
-            let settled = false;
-            const timeout = setTimeout(() => {
-                if (!settled) { settled = true; try { ws.close(); } catch {} resolve(events); }
-            }, RELAY_TIMEOUT);
-            try { ws = new WebSocket(relayUrl); } catch { clearTimeout(timeout); resolve(events); return; }
+            const events = []; let settled = false;
+            const t = setTimeout(() => { if (!settled) { settled = true; try { ws.close(); } catch {} resolve(events); } }, RELAY_TIMEOUT);
+            let ws; try { ws = new WebSocket(url); } catch { clearTimeout(t); resolve(events); return; }
             ws.onopen = () => ws.send(JSON.stringify(['REQ', subId, filter]));
-            ws.onmessage = (msg) => {
-                try {
-                    const data = JSON.parse(msg.data);
-                    if (data[0] === 'EVENT' && data[1] === subId) events.push(data[2]);
-                    else if (data[0] === 'EOSE') {
-                        if (!settled) { settled = true; clearTimeout(timeout); ws.close(); resolve(events); }
-                    }
-                } catch {}
-            };
-            ws.onerror = () => { if (!settled) { settled = true; clearTimeout(timeout); resolve(events); } };
+            ws.onmessage = m => { try { const d = JSON.parse(m.data); if (d[0]==='EVENT'&&d[1]===subId) events.push(d[2]); else if (d[0]==='EOSE') { if (!settled) { settled=true; clearTimeout(t); ws.close(); resolve(events); } } } catch {} };
+            ws.onerror = () => { if (!settled) { settled=true; clearTimeout(t); resolve(events); } };
         });
     }
-
-    function publishToRelay(relayUrl, event) {
-        return new Promise((resolve) => {
+    function publishToRelay(url, event) {
+        return new Promise(resolve => {
             let ws, settled = false;
-            const timeout = setTimeout(() => {
-                if (!settled) { settled = true; try { ws.close(); } catch {} resolve({ url: relayUrl, ok: false, msg: 'timeout' }); }
-            }, RELAY_TIMEOUT);
-            try { ws = new WebSocket(relayUrl); } catch { clearTimeout(timeout); resolve({ url: relayUrl, ok: false, msg: 'connect error' }); return; }
-            ws.onopen = () => {
-                console.log('[nostr-amber] Sending EVENT to', relayUrl);
-                ws.send(JSON.stringify(['EVENT', event]));
-            };
-            ws.onmessage = (msg) => {
-                try {
-                    const data = JSON.parse(msg.data);
-                    if (data[0] === 'OK' && !settled) {
-                        settled = true; clearTimeout(timeout); ws.close();
-                        const result = { url: relayUrl, ok: data[2] === true, msg: data[3] || '' };
-                        console.log('[nostr-amber] Relay response:', result);
-                        resolve(result);
-                    }
-                } catch {}
-            };
-            ws.onerror = () => { if (!settled) { settled = true; clearTimeout(timeout); resolve({ url: relayUrl, ok: false, msg: 'ws error' }); } };
+            const t = setTimeout(() => { if (!settled) { settled=true; try{ws.close();}catch{} resolve({url,ok:false,msg:'timeout'}); } }, RELAY_TIMEOUT);
+            try { ws = new WebSocket(url); } catch { clearTimeout(t); resolve({url,ok:false,msg:'connect error'}); return; }
+            ws.onopen = () => { console.log('[amber] → EVENT to', url); ws.send(JSON.stringify(['EVENT', event])); };
+            ws.onmessage = m => { try { const d=JSON.parse(m.data); if(d[0]==='OK'&&!settled){settled=true;clearTimeout(t);ws.close();const r={url,ok:d[2]===true,msg:d[3]||''};console.log('[amber] ←',r);resolve(r);} } catch {} };
+            ws.onerror = () => { if(!settled){settled=true;clearTimeout(t);resolve({url,ok:false,msg:'ws error'});} };
         });
     }
-
     async function publishToRelays(event) {
-        console.log('[nostr-amber] Publishing to', WRITE_RELAYS.length, 'relays...');
-        const results = await Promise.all(WRITE_RELAYS.map(url => publishToRelay(url, event)));
-        const successCount = results.filter(r => r.ok).length;
-        console.log(`[nostr-amber] Published: ${successCount}/${results.length} relays OK`);
+        console.log('[amber] Publishing to', WRITE_RELAYS.length, 'relays');
+        const results = await Promise.all(WRITE_RELAYS.map(u => publishToRelay(u, event)));
+        console.log('[amber] Results:', results.filter(r=>r.ok).length + '/' + results.length, 'OK');
         return results;
     }
 
     // ─── Contact list ────────────────────────────────────────
-    async function fetchContactList(pubkeyHex) {
-        const filter = { kinds: [3], authors: [pubkeyHex], limit: 1 };
-        const results = await Promise.all(READ_RELAYS.map(url => queryRelay(url, filter)));
+    async function fetchContactList(hex) {
+        const results = await Promise.all(READ_RELAYS.map(u => queryRelay(u, {kinds:[3],authors:[hex],limit:1})));
         let newest = null;
-        for (const events of results) {
-            for (const ev of events) {
-                if (!newest || ev.created_at > newest.created_at) newest = ev;
-            }
-        }
+        for (const evts of results) for (const ev of evts) if (!newest || ev.created_at > newest.created_at) newest = ev;
         return newest;
     }
-
     async function loadUserContacts() {
         if (!userPubkeyHex) return;
-        const event = await fetchContactList(userPubkeyHex);
-        if (event) {
-            userContactEvent = event;
-            userContacts = new Set(event.tags.filter(t => t[0] === 'p').map(t => t[1]));
-            try {
-                sessionStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify([...userContacts]));
-                sessionStorage.setItem(STORAGE_KEY_CONTACT_EVENT, JSON.stringify(event));
-            } catch {}
+        const ev = await fetchContactList(userPubkeyHex);
+        if (ev) {
+            userContactEvent = ev;
+            userContacts = new Set(ev.tags.filter(t=>t[0]==='p').map(t=>t[1]));
+            try { sessionStorage.setItem(SK.CONTACTS, JSON.stringify([...userContacts])); sessionStorage.setItem(SK.CONTACT_EVENT, JSON.stringify(ev)); } catch {}
         }
     }
-
     function loadCachedContacts() {
         try {
-            const cached = sessionStorage.getItem(STORAGE_KEY_CONTACTS);
-            const cachedEvent = sessionStorage.getItem(STORAGE_KEY_CONTACT_EVENT);
-            if (cached) userContacts = new Set(JSON.parse(cached));
-            if (cachedEvent) userContactEvent = JSON.parse(cachedEvent);
-            return cached !== null;
+            const c = sessionStorage.getItem(SK.CONTACTS), e = sessionStorage.getItem(SK.CONTACT_EVENT);
+            if (c) userContacts = new Set(JSON.parse(c));
+            if (e) userContactEvent = JSON.parse(e);
+            return c !== null;
         } catch { return false; }
     }
 
-    // ─── Amber intent URLs ───────────────────────────────────
+    // ─── Amber launches via <a> click ────────────────────────
+    function launchAmber(url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 100);
+    }
+
     function amberGetPublicKey() {
-        const callbackUrl = CALLBACK_BASE + '?amber_pubkey=';
-        window.location.href = `nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_pubkey=');
+        launchAmber(`nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${cb}`);
     }
 
     function amberSignEvent(eventJson, targetHex) {
-        try { sessionStorage.setItem(STORAGE_KEY_PENDING, targetHex); } catch {}
+        try { sessionStorage.setItem(SK.PENDING, targetHex); } catch {}
         const encoded = encodeURIComponent(eventJson);
-        const callbackUrl = CALLBACK_BASE + '?amber_event=';
-        window.location.href = `nostrsigner:${encoded}?compressionType=none&returnType=event&type=sign_event&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_event=');
+        launchAmber(`nostrsigner:${encoded}?compressionType=none&returnType=event&type=sign_event&callbackUrl=${cb}`);
     }
 
     // ─── Follow ──────────────────────────────────────────────
     function buildFollowEvent(targetHex) {
-        let tags = [];
-        if (userContactEvent && userContactEvent.tags) tags = [...userContactEvent.tags];
-        if (tags.some(t => t[0] === 'p' && t[1] === targetHex)) return null;
+        let tags = userContactEvent && userContactEvent.tags ? [...userContactEvent.tags] : [];
+        if (tags.some(t => t[0]==='p' && t[1]===targetHex)) return null;
         tags.push(['p', targetHex]);
         return JSON.stringify({
             kind: 3,
             created_at: Math.floor(Date.now() / 1000),
-            tags: tags,
+            tags,
             content: userContactEvent ? userContactEvent.content : '',
         });
     }
 
-    function followWithAmber(targetHex, button) {
-        const eventJson = buildFollowEvent(targetHex);
-        if (!eventJson) {
-            button.textContent = '✓ Siguiendo';
-            button.classList.add('following');
-            button.disabled = true;
-            return;
-        }
-        button.textContent = '⏳';
-        button.disabled = true;
-        setTimeout(() => amberSignEvent(eventJson, targetHex), 100);
+    function followWithAmber(hex, btn) {
+        const json = buildFollowEvent(hex);
+        if (!json) { btn.textContent='✓ Siguiendo'; btn.classList.add('following'); btn.disabled=true; return; }
+        btn.textContent = '⏳';
+        btn.disabled = true;
+        setTimeout(() => amberSignEvent(json, hex), 100);
     }
 
     // ─── Handle Amber callbacks ──────────────────────────────
     async function handleAmberReturn() {
-        const fullUrl = window.location.href;
-        const qIndex = fullUrl.indexOf('?');
-        if (qIndex === -1) return null;
-        const queryString = fullUrl.slice(qIndex + 1);
+        const url = window.location.href;
+        const q = url.indexOf('?');
+        if (q === -1) return null;
+        const qs = url.slice(q + 1);
 
-        if (queryString.startsWith('amber_pubkey=')) {
-            const pubkey = queryString.slice('amber_pubkey='.length).replace(/[^a-f0-9]/gi, '');
-            if (pubkey && pubkey.length >= 64) {
-                userPubkeyHex = pubkey.slice(0, 64);
-                try { sessionStorage.setItem(STORAGE_KEY_PUBKEY, userPubkeyHex); } catch {}
+        // ── get_public_key callback ──
+        if (qs.startsWith('amber_pubkey=')) {
+            const raw = qs.slice('amber_pubkey='.length);
+            const pubkey = raw.replace(/[^a-f0-9]/gi, '').slice(0, 64);
+            console.log('[amber] Got pubkey:', pubkey);
+            if (pubkey && pubkey.length === 64) {
+                userPubkeyHex = pubkey;
+                try { sessionStorage.setItem(SK.PUBKEY, pubkey); } catch {}
             }
             window.history.replaceState({}, '', CALLBACK_BASE);
             return 'pubkey';
         }
 
-        if (queryString.startsWith('amber_event=')) {
-            const raw = queryString.slice('amber_event='.length);
+        // ── sign_event callback ──
+        if (qs.startsWith('amber_event=')) {
+            const raw = qs.slice('amber_event='.length);
             window.history.replaceState({}, '', CALLBACK_BASE);
 
-            let signedEvent;
-            try {
-                signedEvent = JSON.parse(decodeURIComponent(raw));
-            } catch {
-                try { signedEvent = JSON.parse(raw); } catch {
-                    try {
-                        if (raw.startsWith('Signer1')) {
-                            const b64 = raw.slice(7);
-                            const binary = atob(b64);
-                            const bytes = new Uint8Array(binary.length);
-                            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                            const text = await new Response(
-                                new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
-                            ).text();
-                            signedEvent = JSON.parse(text);
-                        }
-                    } catch (err) {
-                        console.error('[nostr-amber] Parse error:', err);
-                        return 'error';
-                    }
+            let signed;
+            // Try decode in order: URL-encoded JSON, raw JSON, gzip
+            try { signed = JSON.parse(decodeURIComponent(raw)); } catch {
+                try { signed = JSON.parse(raw); } catch {
+                    if (raw.startsWith('Signer1')) {
+                        try {
+                            const bytes = Uint8Array.from(atob(raw.slice(7)), c => c.charCodeAt(0));
+                            const text = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+                            signed = JSON.parse(text);
+                        } catch (e) { console.error('[amber] gzip parse fail:', e); return 'error'; }
+                    } else { console.error('[amber] Cannot parse event'); return 'error'; }
                 }
             }
 
-            if (!signedEvent || !signedEvent.sig) {
-                console.error('[nostr-amber] Invalid signed event:', signedEvent);
-                return 'error';
-            }
+            if (!signed || !signed.sig) { console.error('[amber] No sig in event:', signed); return 'error'; }
 
-            console.log('[nostr-amber] Publishing signed event, ID:', signedEvent.id);
-            const results = await publishToRelays(signedEvent);
-            const success = results.some(r => r.ok === true);
+            console.log('[amber] Publishing signed event ID:', signed.id);
+            const results = await publishToRelays(signed);
+            const ok = results.some(r => r.ok);
 
-            const pendingHex = sessionStorage.getItem(STORAGE_KEY_PENDING);
-            if (success && pendingHex) {
+            const pendingHex = sessionStorage.getItem(SK.PENDING);
+            if (ok && pendingHex) {
                 userContacts.add(pendingHex);
-                userContactEvent = signedEvent;
+                userContactEvent = signed;
                 try {
-                    sessionStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify([...userContacts]));
-                    sessionStorage.setItem(STORAGE_KEY_CONTACT_EVENT, JSON.stringify(signedEvent));
-                    sessionStorage.removeItem(STORAGE_KEY_PENDING);
+                    sessionStorage.setItem(SK.CONTACTS, JSON.stringify([...userContacts]));
+                    sessionStorage.setItem(SK.CONTACT_EVENT, JSON.stringify(signed));
+                    sessionStorage.removeItem(SK.PENDING);
                 } catch {}
             } else {
-                try { sessionStorage.removeItem(STORAGE_KEY_PENDING); } catch {}
+                try { sessionStorage.removeItem(SK.PENDING); } catch {}
             }
-
-            return success ? 'follow_ok' : 'follow_error';
+            return ok ? 'follow_ok' : 'follow_error';
         }
 
         return null;
@@ -291,122 +229,81 @@
 
     // ─── UI ──────────────────────────────────────────────────
     function injectStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .amber-connect-bar {
-                display: flex; align-items: center; justify-content: center;
-                gap: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem;
-                background: var(--bg-secondary); border: 1px solid var(--border);
-                border-radius: 10px; font-size: 0.85rem; color: var(--text-secondary);
-            }
-            .amber-connect-btn {
-                padding: 0.5rem 1.2rem; border: 1px solid #f7931a;
-                background: #f7931a; color: #fff; border-radius: 8px;
-                font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
-            }
-            .amber-connect-btn:hover { background: #e8850f; }
-            .amber-login-bar {
-                display: flex; align-items: center; justify-content: center;
-                gap: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem;
-                background: var(--bg-secondary); border: 1px solid var(--border);
-                border-radius: 10px; font-size: 0.85rem; color: var(--text-secondary);
-            }
-            .amber-login-bar .status-dot {
-                width: 8px; height: 8px; border-radius: 50%; background: #f7931a; flex-shrink: 0;
-            }
-            .amber-login-bar .user-npub {
-                font-family: monospace; font-size: 0.75rem;
-            }
-            .amber-disconnect-btn {
-                padding: 0.3rem 0.6rem; border: 1px solid var(--border);
-                background: transparent; color: var(--text-secondary);
-                border-radius: 6px; font-size: 0.7rem; cursor: pointer;
-            }
-            .follow-btn-amber {
-                padding: 0.45rem 0.85rem; border: 1px solid #f7931a;
-                background: #f7931a; color: #fff; border-radius: 8px;
-                font-family: inherit; font-size: 0.78rem; font-weight: 600;
-                cursor: pointer; white-space: nowrap;
-            }
-            .follow-btn-amber:hover:not(:disabled) { background: #e8850f; }
-            .follow-btn-amber:disabled { cursor: default; }
-            .follow-btn-amber.following {
-                background: transparent; color: var(--success); border-color: var(--success);
-            }
-            .amber-toast {
-                position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-                padding: 0.75rem 1.5rem; background: var(--bg-tertiary);
-                border: 1px solid var(--success); border-radius: 10px;
-                color: var(--success); font-size: 0.85rem; font-weight: 600;
-                z-index: 1000; animation: amberFadeIn 0.3s ease;
-            }
-            .amber-toast.error { border-color: #f87171; color: #f87171; }
-            @keyframes amberFadeIn {
-                from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-                to { opacity: 1; transform: translateX(-50%) translateY(0); }
-            }
+        const s = document.createElement('style');
+        s.textContent = `
+            .amber-connect-bar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.75rem 1rem;margin-bottom:1.5rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.85rem;color:var(--text-secondary)}
+            .amber-connect-btn{padding:.5rem 1.2rem;border:1px solid #f7931a;background:#f7931a;color:#fff;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
+            .amber-connect-btn:hover{background:#e8850f}
+            .amber-login-bar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.75rem 1rem;margin-bottom:1.5rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.85rem;color:var(--text-secondary)}
+            .amber-login-bar .status-dot{width:8px;height:8px;border-radius:50%;background:#f7931a;flex-shrink:0}
+            .amber-login-bar .user-npub{font-family:monospace;font-size:.75rem}
+            .amber-disconnect-btn{padding:.3rem .6rem;border:1px solid var(--border);background:transparent;color:var(--text-secondary);border-radius:6px;font-size:.7rem;cursor:pointer}
+            .follow-btn-amber{padding:.45rem .85rem;border:1px solid #f7931a;background:#f7931a;color:#fff;border-radius:8px;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+            .follow-btn-amber:hover:not(:disabled){background:#e8850f}
+            .follow-btn-amber:disabled{cursor:default}
+            .follow-btn-amber.following{background:transparent;color:var(--success);border-color:var(--success)}
+            .amber-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:.75rem 1.5rem;background:var(--bg-tertiary);border:1px solid var(--success);border-radius:10px;color:var(--success);font-size:.85rem;font-weight:600;z-index:1000;animation:amberFadeIn .3s ease}
+            .amber-toast.error{border-color:#f87171;color:#f87171}
+            @keyframes amberFadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         `;
-        document.head.appendChild(style);
+        document.head.appendChild(s);
     }
 
-    function showToast(message, isError) {
-        const toast = document.createElement('div');
-        toast.className = 'amber-toast' + (isError ? ' error' : '');
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+    function showToast(msg, err) {
+        const t = document.createElement('div');
+        t.className = 'amber-toast' + (err ? ' error' : '');
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
     }
 
     function showConnectBar() {
-        const container = document.querySelector('.search-box');
-        if (!container) return;
+        const ref = document.querySelector('.search-box');
+        if (!ref) return;
         const bar = document.createElement('div');
         bar.className = 'amber-connect-bar';
         bar.id = 'amber-bar';
-        bar.innerHTML = `
-            <span>🤖 ¿Tienes Amber?</span>
-            <button class="amber-connect-btn" id="amber-connect-btn">🔑 Conectar con Amber</button>
-        `;
-        container.parentNode.insertBefore(bar, container);
-        document.getElementById('amber-connect-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            amberGetPublicKey();
-        });
+
+        const label = document.createElement('span');
+        label.textContent = '🤖 ¿Tienes Amber?';
+
+        // Use an <a> tag — browsers allow <a href="nostrsigner:..."> even if they block window.location
+        const btn = document.createElement('a');
+        btn.className = 'amber-connect-btn';
+        btn.textContent = '🔑 Conectar con Amber';
+        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_pubkey=');
+        btn.href = `nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${cb}`;
+
+        bar.appendChild(label);
+        bar.appendChild(btn);
+        ref.parentNode.insertBefore(bar, ref);
     }
 
-    function showLoginBar(pubkeyHex) {
+    function showLoginBar(hex) {
         const existing = document.getElementById('amber-bar');
         if (existing) existing.remove();
-        const container = document.querySelector('.search-box');
-        if (!container) return;
-        const npubShort = pubkeyHex.slice(0, 8) + '...' + pubkeyHex.slice(-6);
+        const ref = document.querySelector('.search-box');
+        if (!ref) return;
         const bar = document.createElement('div');
         bar.className = 'amber-login-bar';
         bar.id = 'amber-bar';
         bar.innerHTML = `
             <span class="status-dot"></span>
             <span>Conectado vía Amber</span>
-            <span class="user-npub">${npubShort}</span>
+            <span class="user-npub">${hex.slice(0,8)}...${hex.slice(-6)}</span>
             <button class="amber-disconnect-btn" id="amber-disconnect">✕</button>
         `;
-        container.parentNode.insertBefore(bar, container);
+        ref.parentNode.insertBefore(bar, ref);
         document.getElementById('amber-disconnect').addEventListener('click', () => {
-            try {
-                sessionStorage.removeItem(STORAGE_KEY_PUBKEY);
-                sessionStorage.removeItem(STORAGE_KEY_CONTACTS);
-                sessionStorage.removeItem(STORAGE_KEY_CONTACT_EVENT);
-                sessionStorage.removeItem(STORAGE_KEY_PENDING);
-            } catch {}
+            try { Object.values(SK).forEach(k => sessionStorage.removeItem(k)); } catch {}
             location.reload();
         });
     }
 
     function addFollowButtons() {
-        const cards = document.querySelectorAll('.profile-card');
-        cards.forEach(card => {
+        document.querySelectorAll('.profile-card').forEach(card => {
             if (card.querySelector('.follow-btn-amber')) return;
             if (!userPubkeyHex) return;
-
             const npub = card.dataset.npub;
             if (!npub) return;
             const hex = npubToHex(npub);
@@ -419,32 +316,56 @@
             btn.disabled = isFollowing;
             btn.addEventListener('click', () => followWithAmber(hex, btn));
 
-            const linkParent = card.querySelector('.profile-link');
-            if (linkParent) {
-                linkParent.classList.add('profile-actions');
-                linkParent.insertBefore(btn, linkParent.firstChild);
-            }
+            const lp = card.querySelector('.profile-link');
+            if (lp) { lp.classList.add('profile-actions'); lp.insertBefore(btn, lp.firstChild); }
         });
     }
 
+    function waitForDirectory(cb) {
+        const dir = document.getElementById('directory');
+        if (!dir) { cb(); return; }
+        if (dir.querySelector('.profile-card')) { cb(); return; }
+        const obs = new MutationObserver((_, o) => { if (dir.querySelector('.profile-card')) { o.disconnect(); cb(); } });
+        obs.observe(dir, { childList: true });
+        setTimeout(() => { obs.disconnect(); cb(); }, 5000);
+    }
+
     // ─── Init ────────────────────────────────────────────────
+    // CRITICAL: Process callbacks IMMEDIATELY, before any delays
+    // Otherwise the pubkey param gets lost on page init
+    async function processCallbacksEarly() {
+        const url = window.location.href;
+        if (url.includes('amber_pubkey=') || url.includes('amber_event=')) {
+            console.log('[amber] Detected callback in URL, processing...');
+            return await handleAmberReturn();
+        }
+        return null;
+    }
+
     async function init() {
-        await new Promise(r => setTimeout(r, 700));
-        if (hasNip07()) return;
-        if (!isAndroid()) return;
+        // Step 1: Process any Amber callbacks IMMEDIATELY
+        const callbackResult = await processCallbacksEarly();
 
-        injectStyles();
-
-        const callbackResult = await handleAmberReturn();
+        // Step 2: Restore session
         if (!userPubkeyHex) {
-            try { userPubkeyHex = sessionStorage.getItem(STORAGE_KEY_PUBKEY); } catch {}
+            try { userPubkeyHex = sessionStorage.getItem(SK.PUBKEY); } catch {}
         }
 
+        // Step 3: Wait for NIP-07 detection
+        await new Promise(r => setTimeout(r, 700));
+        if (hasNip07()) return; // nostr-follow.js handles desktop
+        if (!isAndroid()) return;
+
+        console.log('[amber] Android detected, no NIP-07. Activating Amber support.');
+        injectStyles();
+
+        // Show toasts from callback results
         if (callbackResult === 'follow_ok') showToast('✓ Follow realizado con éxito');
-        else if (callbackResult === 'follow_error') showToast('✗ Error al publicar el follow', true);
-        else if (callbackResult === 'error') showToast('✗ Error al procesar firma de Amber', true);
+        else if (callbackResult === 'follow_error') showToast('✗ Error al publicar', true);
+        else if (callbackResult === 'error') showToast('✗ Error con firma de Amber', true);
 
         if (userPubkeyHex) {
+            console.log('[amber] Session active:', userPubkeyHex.slice(0, 12) + '...');
             amberReady = true;
             showLoginBar(userPubkeyHex);
             loadCachedContacts();
@@ -459,20 +380,8 @@
             showConnectBar();
         }
 
-        const observer = new MutationObserver(() => setTimeout(addFollowButtons, 100));
-        const directory = document.getElementById('directory');
-        if (directory) observer.observe(directory, { childList: true });
-    }
-
-    function waitForDirectory(callback) {
         const dir = document.getElementById('directory');
-        if (!dir) { callback(); return; }
-        if (dir.querySelector('.profile-card')) { callback(); return; }
-        const obs = new MutationObserver((m, observer) => {
-            if (dir.querySelector('.profile-card')) { observer.disconnect(); callback(); }
-        });
-        obs.observe(dir, { childList: true });
-        setTimeout(() => { obs.disconnect(); callback(); }, 5000);
+        if (dir) new MutationObserver(() => setTimeout(addFollowButtons, 100)).observe(dir, { childList: true });
     }
 
     if (document.readyState === 'loading') {
