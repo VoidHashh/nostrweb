@@ -226,6 +226,12 @@
             text-overflow: ellipsis;
         }
 
+        .profile-npub-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
         .profile-npub {
             font-size: 0.75rem;
             color: var(--text-secondary);
@@ -234,6 +240,29 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 220px;
+        }
+
+        .copy-npub-btn {
+            padding: 0.15rem 0.4rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .copy-npub-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .copy-npub-btn.copied {
+            color: var(--success);
+            border-color: var(--success);
         }
 
         .profile-link {
@@ -485,7 +514,10 @@
                             <div class="profile-avatar">${initial}</div>
                             <div class="profile-details">
                                 <div class="profile-name">${escapeHtml(p.display_name || 'Anónimo')}</div>
-                                <div class="profile-npub">${npubShort}</div>
+                                <div class="profile-npub-row">
+                                    <span class="profile-npub">${npubShort}</span>
+                                    <button class="copy-npub-btn" onclick="copyNpub(this, '${p.npub}')" title="Copiar npub al portapapeles">📋 Copiar npub</button>
+                                </div>
                             </div>
                         </div>
                         <div class="profile-link">
@@ -494,6 +526,18 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function copyNpub(btn, npub) {
+            navigator.clipboard.writeText(npub).then(() => {
+                const original = btn.textContent;
+                btn.textContent = '✓ Copiado';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.classList.remove('copied');
+                }, 1500);
+            });
         }
 
         function escapeHtml(str) {
