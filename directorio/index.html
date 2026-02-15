@@ -337,14 +337,45 @@
             margin-bottom: 1.5rem;
         }
 
+        /* ─── Profile actions container (shared with JS) ─── */
+        .profile-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
         /* ─── Responsive ─── */
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
             .hero h1 { font-size: 1.5rem; }
             .stats { flex-direction: row; }
             .stat-card { flex: 1; padding: 0.75rem; min-width: 0; }
             .stat-card .number { font-size: 1.4rem; }
-            .profile-card { padding: 0.85rem 1rem; }
-            .profile-npub { max-width: 140px; }
+
+            .profile-card {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.85rem 1rem;
+                gap: 0.6rem;
+            }
+
+            .profile-info {
+                width: 100%;
+            }
+
+            .profile-name {
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            .profile-npub { max-width: 200px; }
+
+            .profile-link,
+            .profile-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
             .profile-link a { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
         }
     </style>
@@ -424,6 +455,16 @@
             }
         }
 
+        // Detect platform for profile links
+        const isMobileDevice = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+        function getProfileUrl(npub, njumpUrl) {
+            // On mobile, use nostr: URI to open native apps
+            if (isMobileDevice) return 'nostr:' + npub;
+            // On desktop, use njump.me as fallback
+            return njumpUrl;
+        }
+
         function renderProfiles(profiles) {
             const container = document.getElementById('directory');
 
@@ -436,6 +477,8 @@
             container.innerHTML = profiles.map((p, i) => {
                 const initial = (p.display_name || '?')[0].toUpperCase();
                 const npubShort = p.npub.slice(0, 20) + '...';
+                const profileUrl = getProfileUrl(p.npub, p.njump_url);
+                const linkTarget = isMobileDevice ? '' : 'target="_blank" rel="noopener"';
                 return `
                     <div class="profile-card" data-npub="${p.npub}">
                         <div class="profile-info">
@@ -446,7 +489,7 @@
                             </div>
                         </div>
                         <div class="profile-link">
-                            <a href="${p.njump_url}" target="_blank" rel="noopener">Ver perfil →</a>
+                            <a href="${profileUrl}" ${linkTarget}>Ver perfil →</a>
                         </div>
                     </div>
                 `;
