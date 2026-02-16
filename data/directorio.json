@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-02-16T16:55:52.916568+00:00",
-  "total_profiles": 21,
+  "updated_at": "2026-02-16T16:56:01.373982+00:00",
+  "total_profiles": 22,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -127,6 +127,12 @@
       "display_name": "Koval0x",
       "njump_url": "https://njump.me/npub1uqjn7uaje3z3807yrr2d28xenxa4y64ukdpymexrvwad9sced5aqhwfxhu",
       "added_at": "2026-02-15T11:46:37.971183+00:00"
+    },
+    {
+      "npub": "npub1rhlqlkytw73ae5flen49q4seatgv3j3xdk5wupg9690un3l5l7ese5dqx7",
+      "display_name": "Gameboycolor",
+      "njump_url": "https://njump.me/npub1rhlqlkytw73ae5flen49q4seatgv3j3xdk5wupg9690un3l5l7ese5dqx7",
+      "added_at": "2026-02-16T16:54:46.606963+00:00"
     }
   ]
 }
