@@ -468,7 +468,7 @@
                 if (!res.ok) throw new Error('No se pudo cargar');
                 const data = await res.json();
 
-                allProfiles = data.profiles || [];
+                allProfiles = normalizeProfiles(data.profiles);
 
                 // Stats
                 document.getElementById('total-count').textContent = data.total_profiles || 0;
@@ -487,6 +487,39 @@
         // Detect platform for profile links
         const isMobileDevice = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
+        function isValidNpub(npub) {
+            return typeof npub === 'string' &&
+                /^npub1[023456789acdefghjklmnpqrstuvwxyz]{58}$/i.test(npub.trim());
+        }
+
+        function sanitizeNpub(npub) {
+            const normalized = typeof npub === 'string' ? npub.trim() : '';
+            return isValidNpub(normalized) ? normalized : '';
+        }
+
+        function sanitizeHttpUrl(url) {
+            if (typeof url !== 'string') return '';
+            try {
+                const parsed = new URL(url);
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                    return parsed.href;
+                }
+            } catch (err) {}
+            return '';
+        }
+
+        function normalizeProfiles(profiles) {
+            return (profiles || []).map((profile) => {
+                const npub = sanitizeNpub(profile && profile.npub);
+                if (!npub) return null;
+                return {
+                    npub,
+                    display_name: typeof profile.display_name === 'string' ? profile.display_name : 'Anónimo',
+                    njump_url: sanitizeHttpUrl(profile.njump_url) || ('https://njump.me/' + npub),
+                };
+            }).filter(Boolean);
+        }
+
         function getProfileUrl(npub, njumpUrl) {
             // On mobile, use nostr: URI to open native apps
             if (isMobileDevice) return 'nostr:' + npub;
@@ -503,11 +536,11 @@
                 return;
             }
 
-            container.innerHTML = profiles.map((p, i) => {
+            container.innerHTML = profiles.map((p) => {
                 const initial = (p.display_name || '?')[0].toUpperCase();
                 const npubShort = p.npub.slice(0, 20) + '...';
                 const profileUrl = getProfileUrl(p.npub, p.njump_url);
-                const linkTarget = isMobileDevice ? '' : 'target="_blank" rel="noopener"';
+                const linkTarget = isMobileDevice ? '' : 'target="_blank" rel="noopener noreferrer"';
                 return `
                     <div class="profile-card" data-npub="${p.npub}">
                         <div class="profile-info">
@@ -516,12 +549,12 @@
                                 <div class="profile-name">${escapeHtml(p.display_name || 'Anónimo')}</div>
                                 <div class="profile-npub-row">
                                     <span class="profile-npub">${npubShort}</span>
-                                    <button class="copy-npub-btn" onclick="copyNpub(this, '${p.npub}')" title="Copiar npub al portapapeles">📋 Copiar npub</button>
+                                    <button class="copy-npub-btn" data-npub="${p.npub}" title="Copiar npub al portapapeles">📋 Copiar npub</button>
                                 </div>
                             </div>
                         </div>
                         <div class="profile-link">
-                            <a href="${profileUrl}" ${linkTarget}>Ver perfil →</a>
+                            <a href="${escapeAttribute(profileUrl)}" ${linkTarget}>Ver perfil →</a>
                         </div>
                     </div>
                 `;
@@ -529,7 +562,7 @@
         }
 
         function copyNpub(btn, npub) {
-            navigator.clipboard.writeText(npub).then(() => {
+            const setCopiedState = () => {
                 const original = btn.textContent;
                 btn.textContent = '✓ Copiado';
                 btn.classList.add('copied');
@@ -537,7 +570,28 @@
                     btn.textContent = original;
                     btn.classList.remove('copied');
                 }, 1500);
-            });
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(npub).then(setCopiedState).catch(() => fallbackCopyNpub(npub, setCopiedState));
+            } else {
+                fallbackCopyNpub(npub, setCopiedState);
+            }
+        }
+
+        function fallbackCopyNpub(npub, onCopied) {
+            const textArea = document.createElement('textarea');
+            textArea.value = npub;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                if (document.execCommand('copy')) onCopied();
+            } catch (err) {}
+
+            document.body.removeChild(textArea);
         }
 
         function escapeHtml(str) {
@@ -545,6 +599,24 @@
             div.textContent = str;
             return div.innerHTML;
         }
+
+        function escapeAttribute(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        document.getElementById('directory').addEventListener('click', function (event) {
+            const btn = event.target.closest('.copy-npub-btn');
+            if (!btn) return;
+
+            const npub = sanitizeNpub(btn.dataset.npub);
+            if (!npub) return;
+
+            copyNpub(btn, npub);
+        });
 
         // Search
         document.getElementById('search').addEventListener('input', function () {
