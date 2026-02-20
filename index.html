@@ -1347,10 +1347,10 @@
                 <div class="steps">
                     <div class="step">
                         <h3>Obtén una Lightning Address</h3>
-                        <p>Al instalar tu wallet, automáticamente te asigna una <strong>Lightning Address</strong> (algo como: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2e4041434c5c4b6e594f42424b5a004d4143">[email&#160;protected]</a>). Es como un alias para recibir pagos.</p>
+                        <p>Al instalar tu wallet, automáticamente te asigna una <strong>Lightning Address</strong> (algo como: <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-family: monospace;">[email&#160;protected]</code>). Es como un alias para recibir pagos.</p>
                         <div class="key-example" style="margin-top: 15px;">
                             <span class="key-label">Ejemplo:</span>
-                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="196d6c7776747b6b7c596e7875757c6d767f6a786d766a7170377a7674">[email&#160;protected]</a>
+                            <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-family: monospace;">[email&#160;protected]</code>
                         </div>
                     </div>
 
@@ -1725,7 +1725,7 @@
                     <div class="card">
                         <h3 style="margin-top: 0;">Con NIP-05 ✓</h3>
                         <div class="key-example">
-                            <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="95fbfaf8f7e7f0d5e1e0f1faf8fcfbfcfabbf6faf8">[email&#160;protected]</a>
+                            <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-family: monospace;">[email&#160;protected]</code>
                         </div>
                         <p style="margin-top: 15px; color: var(--text-secondary);">Fácil de recordar y verificar</p>
                     </div>
@@ -1743,7 +1743,7 @@
                         <div class="client-item">
                             <div class="client-info">
                                 <h4>zaps.lol</h4>
-                                <p>Gratis, algo como <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f799989a958592b78d968784d99b989b">[email&#160;protected]</a>. Rápido y fácil.</p>
+                                <p>Gratis, algo como <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-family: monospace;">[email&#160;protected]</code>. Rápido y fácil.</p>
                             </div>
                             <a href="https://zaps.lol/" target="_blank" class="client-link">Obtener →</a>
                         </div>
@@ -1789,7 +1789,7 @@
 
                         <div class="step">
                             <h3>Añádelo a tu perfil</h3>
-                            <p>En tu cliente Nostr, campo NIP-05: <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-family: monospace;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e397968d8c8e819186a39796878c8e8a8d8a8ccd808c8e">[email&#160;protected]</a></code></p>
+                            <p>En tu cliente Nostr, campo NIP-05: <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px; font-family: monospace;">[email&#160;protected]</code></p>
                         </div>
                     </div>
                 </div>
@@ -2270,8 +2270,8 @@
                     <div style="margin-top: 15px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px;">Lightning Address:</p>
                         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <code id="lightning-address" style="color: var(--accent); font-size: 0.9rem; word-break: break-all; flex: 1;"> applealpaca64@phoenixwallet.me</code>
-                            <button onclick="copyLightning()" class="copy-btn">
+                            <code id="lightning-address" data-address="applealpaca64@phoenixwallet.me" style="color: var(--accent); font-size: 0.9rem; word-break: break-all; flex: 1;">applealpaca64@phoenixwallet.me</code>
+                            <button onclick="copyLightning(this)" class="copy-btn">
                                 📋 Copiar
                             </button>
                         </div>
@@ -2305,11 +2305,11 @@
         </div>
     </footer>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // Copy Lightning address
-        function copyLightning() {
-            const address = document.getElementById('lightning-address').textContent;
-            const btn = event.target;
+        function copyLightning(btn) {
+            const addressElement = document.getElementById('lightning-address');
+            const address = (addressElement.dataset.address || addressElement.textContent).trim();
             const originalText = btn.textContent;
             
             if (navigator.clipboard && navigator.clipboard.writeText) {
