@@ -172,6 +172,10 @@
             gap: 25px;
         }
 
+        .secondary-grid {
+            margin-top: 24px;
+        }
+
         .card {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -288,6 +292,13 @@
             background: var(--accent);
             color: white;
             border-color: var(--accent);
+        }
+
+        .copy-btn-link {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .action-stack {
@@ -497,7 +508,7 @@
             <div class="container">
                 <span class="page-kicker">Lightning BOLT12 reutilizable</span>
                 <h1>Donar con Bitcoin</h1>
-                <p class="subtitle">Una pagina dedicada para apoyar el proyecto con la misma sobriedad visual del sitio: QR visible, enlace directo a wallet y copia manual del codigo BOLT12 cuando haga falta.</p>
+                <p class="subtitle">Apoya el proyecto con Bitcoin Lightning mediante un BOLT12 reutilizable. Escanea el QR o abre el enlace en tu wallet.</p>
             </div>
         </section>
 
@@ -557,9 +568,52 @@
                             <p><strong>Compatibilidad:</strong> algunas wallets todavia no soportan BOLT12 o el parametro <code>lno=</code>. En esos casos, la via mas fiable sigue siendo copiar y pegar manualmente la oferta.</p>
                         </div>
 
-                        <div id="copy-status" class="copy-status" aria-live="polite"></div>
                     </article>
                 </div>
+
+                <div class="card-grid secondary-grid">
+                    <article class="card donation-card" aria-labelledby="onchain-title">
+                        <h2 id="onchain-title">Respaldo on-chain</h2>
+                        <p>Tambien dejamos una direccion Bitcoin SegWit para montos grandes o para wallets que prefieran una ruta mas universal.</p>
+
+                        <div class="code-group">
+                            <span class="code-label">Direccion Bitcoin</span>
+                            <code id="onchain-address" class="code-value">bc1qqqnmg5yfxjyskqamyvwu3l33dtcjhrq6reuwxj</code>
+                            <div class="copy-row">
+                                <button type="button" class="copy-btn" data-copy-target="onchain-address" aria-label="Copiar la direccion Bitcoin on-chain">Copiar direccion</button>
+                                <a href="bitcoin:bc1qqqnmg5yfxjyskqamyvwu3l33dtcjhrq6reuwxj" class="copy-btn copy-btn-link" aria-label="Abrir la direccion Bitcoin on-chain en una wallet">Abrir en wallet</a>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <p><strong>Nota de privacidad:</strong> preferimos donaciones por Lightning. Usa on-chain solo si te encaja mejor o si vas a mover un monto mayor.</p>
+                        </div>
+                    </article>
+
+                    <article class="card donation-card" aria-labelledby="extras-title">
+                        <h2 id="extras-title">Otros canales utiles</h2>
+                        <p>Tomando como referencia la pagina de aprendeBTC, a&ntilde;ad&iacute; tambi&eacute;n los fallbacks que pueden resultar utiles cuando una wallet no se lleva bien con el flujo principal.</p>
+
+                        <div class="code-group">
+                            <span class="code-label">Lightning Address secundaria</span>
+                            <code id="lightning-address" class="code-value">applealpaca64@phoenixwallet.me</code>
+                            <div class="copy-row">
+                                <button type="button" class="copy-btn" data-copy-target="lightning-address" aria-label="Copiar la Lightning Address secundaria">Copiar Lightning Address</button>
+                            </div>
+                        </div>
+
+                        <div class="code-group">
+                            <span class="code-label">Nostr</span>
+                            <code id="nostr-nip05" class="code-value">voidhash@nostr.lol</code>
+                            <div class="copy-row">
+                                <button type="button" class="copy-btn" data-copy-target="nostr-nip05" aria-label="Copiar el NIP-05 de Nostr">Copiar NIP-05</button>
+                                <a href="https://njump.me/voidhash@nostr.lol" class="copy-btn copy-btn-link" target="_blank" rel="noopener noreferrer" aria-label="Abrir el perfil en Nostr">Ver perfil en Nostr</a>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <div id="copy-status" class="copy-status" aria-live="polite"></div>
             </div>
         </section>
     </main>
