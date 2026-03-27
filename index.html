@@ -2261,14 +2261,17 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>Sobre este sitio</h4>
-                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                    <h4>Apoya este sitio</h4>
+                    <p id="footer-donation-copy" style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
                         Guía educativa para la comunidad hispanohablante de Nostr.
                     </p>
-                    <a href="lightning:applealpaca64@phoenixwallet.me" class="lightning-btn">
+                    <a href="/donar/" class="lightning-btn" aria-label="Ir a la pagina de donaciones BOLT12" data-donation-link="true">
                         ⚡ Enviar propina
                     </a>
-                    <div style="margin-top: 15px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 15px;">
+                        Escanea el QR o copia el BOLT12 desde una experiencia mas limpia y compatible con wallets modernas.
+                    </p>
+                    <div style="display: none; margin-top: 15px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px;">Lightning Address:</p>
                         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                             <code id="lightning-address" data-address="applealpaca64@phoenixwallet.me" style="color: var(--accent); font-size: 0.9rem; word-break: break-all; flex: 1;">applealpaca64@phoenixwallet.me</code>
@@ -2401,6 +2404,16 @@
 
         // Close menu when clicking a link
         document.addEventListener('DOMContentLoaded', function() {
+            const donationLink = document.querySelector('[data-donation-link="true"]');
+            if (donationLink) {
+                donationLink.innerHTML = '&#9889; Donar con BOLT12';
+            }
+
+            const footerDonationCopy = document.getElementById('footer-donation-copy');
+            if (footerDonationCopy) {
+                footerDonationCopy.textContent = 'La donacion Lightning ahora vive en una pagina dedicada con QR BOLT12 reutilizable, enlace directo a wallet y copia manual del codigo.';
+            }
+
             const navLinks = document.querySelectorAll('.nav-menu a');
             navLinks.forEach(link => {
                 link.addEventListener('click', () => {
