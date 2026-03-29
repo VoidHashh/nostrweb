@@ -393,6 +393,7 @@
     // ─── Init ────────────────────────────────────────────────
     async function init() {
         await new Promise(r => setTimeout(r, NIP07_DETECT_DELAY));
+        if (window.__NOSTRFACIL_PREFER_AMBER__ === true) return;
         if (!window.nostr) return;
 
         injectStyles();

@@ -1,13 +1,12 @@
 /**
- * NostrFácil - Amber Follow (NIP-55) v5
- * Usa <a> tags para lanzar nostrsigner: (compatible con Brave, Vanadium, etc.)
- * Procesa callbacks de Amber al inicio, antes de cualquier delay.
+ * NostrFacil - Amber Follow (NIP-55) v6
+ * Uses nostrsigner: deep links on Android browsers and processes callbacks
+ * before any delayed provider detection.
  */
 
 (function () {
     'use strict';
 
-    // ─── Config ──────────────────────────────────────────────
     const READ_RELAYS = [
         'wss://relay.damus.io',
         'wss://nos.lol',
@@ -33,14 +32,17 @@
         CONTACTS: 'nostrfacil_amber_contacts',
         CONTACT_EVENT: 'nostrfacil_amber_contact_event',
     };
+    const STORAGE_AREAS = [];
+
+    try { STORAGE_AREAS.push(window.sessionStorage); } catch {}
+    try { STORAGE_AREAS.push(window.localStorage); } catch {}
 
     let userPubkeyHex = null;
     let userContacts = new Set();
     let userContactEvent = null;
-    let amberReady = false;
 
-    // ─── Bech32 → Hex ────────────────────────────────────────
     const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+
     function bech32Decode(str) {
         str = str.toLowerCase();
         const pos = str.lastIndexOf('1');
@@ -53,101 +55,413 @@
         }
         return { hrp: str.slice(0, pos), data: convertBits(data.slice(0, -6), 5, 8, false) };
     }
+
     function convertBits(data, from, to, pad) {
-        let acc = 0, bits = 0; const r = [], maxv = (1 << to) - 1;
-        for (const v of data) { acc = (acc << from) | v; bits += from; while (bits >= to) { bits -= to; r.push((acc >> bits) & maxv); } }
-        if (pad && bits > 0) r.push((acc << (to - bits)) & maxv);
-        return r;
+        let acc = 0;
+        let bits = 0;
+        const result = [];
+        const maxv = (1 << to) - 1;
+
+        for (const value of data) {
+            acc = (acc << from) | value;
+            bits += from;
+            while (bits >= to) {
+                bits -= to;
+                result.push((acc >> bits) & maxv);
+            }
+        }
+
+        if (pad && bits > 0) result.push((acc << (to - bits)) & maxv);
+        return result;
     }
+
     function npubToHex(npub) {
-        try { const d = bech32Decode(npub); if (!d || d.hrp !== 'npub') return null; return d.data.map(b => b.toString(16).padStart(2, '0')).join(''); } catch { return null; }
+        try {
+            const decoded = bech32Decode(npub);
+            if (!decoded || decoded.hrp !== 'npub') return null;
+            return decoded.data.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch {
+            return null;
+        }
     }
 
-    // ─── Detection ───────────────────────────────────────────
-    function isAndroid() { return /android/i.test(navigator.userAgent); }
-    function hasNip07() { return typeof window.nostr !== 'undefined' && window.nostr !== null; }
+    function getStoredValue(key) {
+        for (const area of STORAGE_AREAS) {
+            try {
+                const value = area.getItem(key);
+                if (value !== null && value !== undefined) return value;
+            } catch {}
+        }
+        return null;
+    }
 
-    // ─── Relay communication ─────────────────────────────────
+    function setStoredValue(key, value) {
+        for (const area of STORAGE_AREAS) {
+            try { area.setItem(key, value); } catch {}
+        }
+    }
+
+    function removeStoredValue(key) {
+        for (const area of STORAGE_AREAS) {
+            try { area.removeItem(key); } catch {}
+        }
+    }
+
+    function clearStoredKeys(keys) {
+        keys.forEach(removeStoredValue);
+    }
+
+    function safeDecode(value) {
+        try { return decodeURIComponent(value); } catch { return value; }
+    }
+
+    function getDecodeCandidates(value) {
+        if (typeof value !== 'string') return [];
+
+        const candidates = [];
+        let current = value;
+
+        for (let i = 0; i < 3; i++) {
+            if (!current || candidates.includes(current)) break;
+            candidates.push(current);
+            const decoded = safeDecode(current);
+            if (decoded === current) break;
+            current = decoded;
+        }
+
+        return candidates;
+    }
+
+    function safeJsonParse(value) {
+        if (typeof value !== 'string') return null;
+        try { return JSON.parse(value); } catch { return null; }
+    }
+
+    function normalizeHexPubkey(value) {
+        if (typeof value !== 'string') return null;
+        const clean = value.trim().replace(/^0x/i, '').replace(/[^a-f0-9]/gi, '');
+        return clean.length === 64 ? clean.toLowerCase() : null;
+    }
+
+    function extractPubkeyHex(value) {
+        if (!value) return null;
+
+        if (typeof value === 'string') {
+            for (const candidate of getDecodeCandidates(value)) {
+                const trimmed = candidate.trim();
+
+                const hex = normalizeHexPubkey(trimmed);
+                if (hex) return hex;
+
+                const npubMatch = trimmed.match(/npub1[023456789acdefghjklmnpqrstuvwxyz]+/i);
+                if (npubMatch) {
+                    const converted = npubToHex(npubMatch[0]);
+                    if (converted) return converted;
+                }
+
+                const parsed = safeJsonParse(trimmed);
+                if (parsed) {
+                    const nested = extractPubkeyHex(parsed);
+                    if (nested) return nested;
+                }
+            }
+
+            return null;
+        }
+
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const nested = extractPubkeyHex(item);
+                if (nested) return nested;
+            }
+            return null;
+        }
+
+        if (typeof value === 'object') {
+            const fields = ['pubkey', 'npub', 'signature', 'result', 'data', 'value'];
+            for (const field of fields) {
+                const nested = extractPubkeyHex(value[field]);
+                if (nested) return nested;
+            }
+            for (const nestedValue of Object.values(value)) {
+                const nested = extractPubkeyHex(nestedValue);
+                if (nested) return nested;
+            }
+        }
+
+        return null;
+    }
+
+    function looksLikeSignedEvent(value) {
+        return !!value &&
+            typeof value === 'object' &&
+            typeof value.sig === 'string' &&
+            typeof value.pubkey === 'string' &&
+            typeof value.kind !== 'undefined';
+    }
+
+    function extractSignedEvent(value) {
+        if (!value) return null;
+
+        if (typeof value === 'string') {
+            for (const candidate of getDecodeCandidates(value)) {
+                const parsed = safeJsonParse(candidate.trim());
+                if (parsed) {
+                    const nested = extractSignedEvent(parsed);
+                    if (nested) return nested;
+                }
+            }
+            return null;
+        }
+
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const nested = extractSignedEvent(item);
+                if (nested) return nested;
+            }
+            return null;
+        }
+
+        if (typeof value === 'object') {
+            if (looksLikeSignedEvent(value)) return value;
+
+            const fields = ['event', 'signedEvent', 'result', 'data', 'value'];
+            for (const field of fields) {
+                const nested = extractSignedEvent(value[field]);
+                if (nested) return nested;
+            }
+            for (const nestedValue of Object.values(value)) {
+                const nested = extractSignedEvent(nestedValue);
+                if (nested) return nested;
+            }
+        }
+
+        return null;
+    }
+
+    async function extractSignedEventFromSignerPayload(raw) {
+        if (typeof raw !== 'string' || !raw.startsWith('Signer1')) return null;
+
+        try {
+            const bytes = Uint8Array.from(atob(raw.slice(7)), c => c.charCodeAt(0));
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+            const text = await new Response(stream).text();
+            return extractSignedEvent(text);
+        } catch (error) {
+            console.error('[amber] gzip parse fail:', error);
+            return null;
+        }
+    }
+
+    function getCallbackValue(name) {
+        try {
+            const url = new URL(window.location.href);
+            const sources = [url.searchParams];
+            const hash = url.hash.startsWith('#') ? url.hash.slice(1) : '';
+            if (hash.includes('=')) sources.push(new URLSearchParams(hash));
+
+            for (const params of sources) {
+                const value = params.get(name);
+                if (value !== null && value !== '') return value;
+            }
+        } catch {}
+
+        const match = window.location.href.match(new RegExp(`[?#&]${name}=([^&#]+)`));
+        return match ? match[1] : null;
+    }
+
+    function clearCallbackUrl() {
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, '', CALLBACK_BASE);
+        }
+    }
+
+    function isAndroid() {
+        return /android/i.test(navigator.userAgent);
+    }
+
+    function hasNip07() {
+        return typeof window.nostr !== 'undefined' && window.nostr !== null;
+    }
+
     function queryRelay(url, filter) {
         return new Promise(resolve => {
             const subId = 'ab_' + Math.random().toString(36).slice(2, 8);
-            const events = []; let settled = false;
-            const t = setTimeout(() => { if (!settled) { settled = true; try { ws.close(); } catch {} resolve(events); } }, RELAY_TIMEOUT);
-            let ws; try { ws = new WebSocket(url); } catch { clearTimeout(t); resolve(events); return; }
+            const events = [];
+            let settled = false;
+            let ws;
+
+            const timeout = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    try { ws.close(); } catch {}
+                    resolve(events);
+                }
+            }, RELAY_TIMEOUT);
+
+            try {
+                ws = new WebSocket(url);
+            } catch {
+                clearTimeout(timeout);
+                resolve(events);
+                return;
+            }
+
             ws.onopen = () => ws.send(JSON.stringify(['REQ', subId, filter]));
-            ws.onmessage = m => { try { const d = JSON.parse(m.data); if (d[0]==='EVENT'&&d[1]===subId) events.push(d[2]); else if (d[0]==='EOSE') { if (!settled) { settled=true; clearTimeout(t); ws.close(); resolve(events); } } } catch {} };
-            ws.onerror = () => { if (!settled) { settled=true; clearTimeout(t); resolve(events); } };
+            ws.onmessage = message => {
+                try {
+                    const data = JSON.parse(message.data);
+                    if (data[0] === 'EVENT' && data[1] === subId) {
+                        events.push(data[2]);
+                    } else if (data[0] === 'EOSE' && !settled) {
+                        settled = true;
+                        clearTimeout(timeout);
+                        ws.close();
+                        resolve(events);
+                    }
+                } catch {}
+            };
+            ws.onerror = () => {
+                if (!settled) {
+                    settled = true;
+                    clearTimeout(timeout);
+                    resolve(events);
+                }
+            };
         });
     }
+
     function publishToRelay(url, event) {
         return new Promise(resolve => {
-            let ws, settled = false;
-            const t = setTimeout(() => { if (!settled) { settled=true; try{ws.close();}catch{} resolve({url,ok:false,msg:'timeout'}); } }, RELAY_TIMEOUT);
-            try { ws = new WebSocket(url); } catch { clearTimeout(t); resolve({url,ok:false,msg:'connect error'}); return; }
-            ws.onopen = () => { console.log('[amber] → EVENT to', url); ws.send(JSON.stringify(['EVENT', event])); };
-            ws.onmessage = m => { try { const d=JSON.parse(m.data); if(d[0]==='OK'&&!settled){settled=true;clearTimeout(t);ws.close();const r={url,ok:d[2]===true,msg:d[3]||''};console.log('[amber] ←',r);resolve(r);} } catch {} };
-            ws.onerror = () => { if(!settled){settled=true;clearTimeout(t);resolve({url,ok:false,msg:'ws error'});} };
+            let ws;
+            let settled = false;
+
+            const timeout = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    try { ws.close(); } catch {}
+                    resolve({ url, ok: false, msg: 'timeout' });
+                }
+            }, RELAY_TIMEOUT);
+
+            try {
+                ws = new WebSocket(url);
+            } catch {
+                clearTimeout(timeout);
+                resolve({ url, ok: false, msg: 'connect error' });
+                return;
+            }
+
+            ws.onopen = () => {
+                console.log('[amber] Sending EVENT to', url);
+                ws.send(JSON.stringify(['EVENT', event]));
+            };
+
+            ws.onmessage = message => {
+                try {
+                    const data = JSON.parse(message.data);
+                    if (data[0] === 'OK' && !settled) {
+                        settled = true;
+                        clearTimeout(timeout);
+                        ws.close();
+                        const result = { url, ok: data[2] === true, msg: data[3] || '' };
+                        console.log('[amber] Relay response:', result);
+                        resolve(result);
+                    }
+                } catch {}
+            };
+
+            ws.onerror = () => {
+                if (!settled) {
+                    settled = true;
+                    clearTimeout(timeout);
+                    resolve({ url, ok: false, msg: 'ws error' });
+                }
+            };
         });
     }
+
     async function publishToRelays(event) {
         console.log('[amber] Publishing to', WRITE_RELAYS.length, 'relays');
-        const results = await Promise.all(WRITE_RELAYS.map(u => publishToRelay(u, event)));
-        console.log('[amber] Results:', results.filter(r=>r.ok).length + '/' + results.length, 'OK');
+        const results = await Promise.all(WRITE_RELAYS.map(url => publishToRelay(url, event)));
+        console.log('[amber] Results:', results.filter(result => result.ok).length + '/' + results.length, 'OK');
         return results;
     }
 
-    // ─── Contact list ────────────────────────────────────────
     async function fetchContactList(hex) {
-        const results = await Promise.all(READ_RELAYS.map(u => queryRelay(u, {kinds:[3],authors:[hex],limit:1})));
+        const results = await Promise.all(READ_RELAYS.map(url => queryRelay(url, { kinds: [3], authors: [hex], limit: 1 })));
         let newest = null;
-        for (const evts of results) for (const ev of evts) if (!newest || ev.created_at > newest.created_at) newest = ev;
+
+        for (const events of results) {
+            for (const event of events) {
+                if (!newest || event.created_at > newest.created_at) newest = event;
+            }
+        }
+
         return newest;
     }
+
     async function loadUserContacts() {
         if (!userPubkeyHex) return;
-        const ev = await fetchContactList(userPubkeyHex);
-        if (ev) {
-            userContactEvent = ev;
-            userContacts = new Set(ev.tags.filter(t=>t[0]==='p').map(t=>t[1]));
-            try { sessionStorage.setItem(SK.CONTACTS, JSON.stringify([...userContacts])); sessionStorage.setItem(SK.CONTACT_EVENT, JSON.stringify(ev)); } catch {}
+
+        const event = await fetchContactList(userPubkeyHex);
+        if (event) {
+            userContactEvent = event;
+            userContacts = new Set(event.tags.filter(tag => tag[0] === 'p').map(tag => tag[1]));
+            setStoredValue(SK.CONTACTS, JSON.stringify([...userContacts]));
+            setStoredValue(SK.CONTACT_EVENT, JSON.stringify(event));
         }
     }
+
     function loadCachedContacts() {
         try {
-            const c = sessionStorage.getItem(SK.CONTACTS), e = sessionStorage.getItem(SK.CONTACT_EVENT);
-            if (c) userContacts = new Set(JSON.parse(c));
-            if (e) userContactEvent = JSON.parse(e);
-            return c !== null;
-        } catch { return false; }
+            const contacts = getStoredValue(SK.CONTACTS);
+            const event = getStoredValue(SK.CONTACT_EVENT);
+            if (contacts) userContacts = new Set(JSON.parse(contacts));
+            if (event) userContactEvent = JSON.parse(event);
+            return contacts !== null;
+        } catch {
+            return false;
+        }
     }
 
-    // ─── Amber launches via <a> click ────────────────────────
+    function buildPublicKeyRequestUrl() {
+        const callbackUrl = encodeURIComponent(CALLBACK_BASE + '?amber_pubkey=');
+        return `nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${callbackUrl}`;
+    }
+
+    function buildSignEventRequestUrl(eventJson) {
+        const encodedEvent = encodeURIComponent(eventJson);
+        const callbackUrl = encodeURIComponent(CALLBACK_BASE + '?amber_event=');
+        return `nostrsigner:${encodedEvent}?compressionType=none&returnType=event&type=sign_event&callbackUrl=${callbackUrl}`;
+    }
+
     function launchAmber(url) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => a.remove(), 100);
+        const link = document.createElement('a');
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => link.remove(), 100);
     }
 
-    function amberGetPublicKey() {
-        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_pubkey=');
-        launchAmber(`nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${cb}`);
+    function requestAmberPublicKey() {
+        window.__NOSTRFACIL_PREFER_AMBER__ = true;
+        launchAmber(buildPublicKeyRequestUrl());
     }
 
-    function amberSignEvent(eventJson, targetHex) {
-        try { sessionStorage.setItem(SK.PENDING, targetHex); } catch {}
-        const encoded = encodeURIComponent(eventJson);
-        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_event=');
-        launchAmber(`nostrsigner:${encoded}?compressionType=none&returnType=event&type=sign_event&callbackUrl=${cb}`);
+    function requestAmberSignEvent(eventJson, targetHex) {
+        setStoredValue(SK.PENDING, targetHex);
+        window.__NOSTRFACIL_PREFER_AMBER__ = true;
+        launchAmber(buildSignEventRequestUrl(eventJson));
     }
 
-    // ─── Follow ──────────────────────────────────────────────
     function buildFollowEvent(targetHex) {
-        let tags = userContactEvent && userContactEvent.tags ? [...userContactEvent.tags] : [];
-        if (tags.some(t => t[0]==='p' && t[1]===targetHex)) return null;
+        const tags = userContactEvent && userContactEvent.tags ? [...userContactEvent.tags] : [];
+        if (tags.some(tag => tag[0] === 'p' && tag[1] === targetHex)) return null;
+
         tags.push(['p', targetHex]);
+
         return JSON.stringify({
             kind: 3,
             created_at: Math.floor(Date.now() / 1000),
@@ -156,81 +470,72 @@
         });
     }
 
-    function followWithAmber(hex, btn) {
-        const json = buildFollowEvent(hex);
-        if (!json) { btn.textContent='✓ Siguiendo'; btn.classList.add('following'); btn.disabled=true; return; }
-        btn.textContent = '⏳';
-        btn.disabled = true;
-        setTimeout(() => amberSignEvent(json, hex), 100);
+    function followWithAmber(hex, button) {
+        const eventJson = buildFollowEvent(hex);
+        if (!eventJson) {
+            button.textContent = 'Siguiendo';
+            button.classList.add('following');
+            button.disabled = true;
+            return;
+        }
+
+        button.textContent = '...';
+        button.disabled = true;
+        setTimeout(() => requestAmberSignEvent(eventJson, hex), 100);
     }
 
-    // ─── Handle Amber callbacks ──────────────────────────────
     async function handleAmberReturn() {
-        const url = window.location.href;
-        const q = url.indexOf('?');
-        if (q === -1) return null;
-        const qs = url.slice(q + 1);
+        const rawPubkey = getCallbackValue('amber_pubkey');
+        if (rawPubkey !== null) {
+            clearCallbackUrl();
+            const pubkey = extractPubkeyHex(rawPubkey);
+            console.log('[amber] Pubkey payload received:', rawPubkey);
 
-        // ── get_public_key callback ──
-        if (qs.startsWith('amber_pubkey=')) {
-            const raw = qs.slice('amber_pubkey='.length);
-            const pubkey = raw.replace(/[^a-f0-9]/gi, '').slice(0, 64);
-            console.log('[amber] Got pubkey:', pubkey);
-            if (pubkey && pubkey.length === 64) {
-                userPubkeyHex = pubkey;
-                try { sessionStorage.setItem(SK.PUBKEY, pubkey); } catch {}
+            if (!pubkey) {
+                console.error('[amber] Could not parse pubkey callback:', rawPubkey);
+                return 'pubkey_error';
             }
-            window.history.replaceState({}, '', CALLBACK_BASE);
+
+            userPubkeyHex = pubkey;
+            setStoredValue(SK.PUBKEY, pubkey);
             return 'pubkey';
         }
 
-        // ── sign_event callback ──
-        if (qs.startsWith('amber_event=')) {
-            const raw = qs.slice('amber_event='.length);
-            window.history.replaceState({}, '', CALLBACK_BASE);
+        const rawEvent = getCallbackValue('amber_event');
+        if (rawEvent !== null) {
+            clearCallbackUrl();
 
-            let signed;
-            // Try decode in order: URL-encoded JSON, raw JSON, gzip
-            try { signed = JSON.parse(decodeURIComponent(raw)); } catch {
-                try { signed = JSON.parse(raw); } catch {
-                    if (raw.startsWith('Signer1')) {
-                        try {
-                            const bytes = Uint8Array.from(atob(raw.slice(7)), c => c.charCodeAt(0));
-                            const text = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-                            signed = JSON.parse(text);
-                        } catch (e) { console.error('[amber] gzip parse fail:', e); return 'error'; }
-                    } else { console.error('[amber] Cannot parse event'); return 'error'; }
-                }
+            let signed = extractSignedEvent(rawEvent);
+            if (!signed) signed = await extractSignedEventFromSignerPayload(rawEvent);
+
+            if (!signed || !signed.sig) {
+                console.error('[amber] Cannot parse signed event callback:', rawEvent);
+                removeStoredValue(SK.PENDING);
+                return 'error';
             }
-
-            if (!signed || !signed.sig) { console.error('[amber] No sig in event:', signed); return 'error'; }
 
             console.log('[amber] Publishing signed event ID:', signed.id);
             const results = await publishToRelays(signed);
-            const ok = results.some(r => r.ok);
+            const ok = results.some(result => result.ok);
 
-            const pendingHex = sessionStorage.getItem(SK.PENDING);
+            const pendingHex = getStoredValue(SK.PENDING);
             if (ok && pendingHex) {
                 userContacts.add(pendingHex);
                 userContactEvent = signed;
-                try {
-                    sessionStorage.setItem(SK.CONTACTS, JSON.stringify([...userContacts]));
-                    sessionStorage.setItem(SK.CONTACT_EVENT, JSON.stringify(signed));
-                    sessionStorage.removeItem(SK.PENDING);
-                } catch {}
-            } else {
-                try { sessionStorage.removeItem(SK.PENDING); } catch {}
+                setStoredValue(SK.CONTACTS, JSON.stringify([...userContacts]));
+                setStoredValue(SK.CONTACT_EVENT, JSON.stringify(signed));
             }
+
+            removeStoredValue(SK.PENDING);
             return ok ? 'follow_ok' : 'follow_error';
         }
 
         return null;
     }
 
-    // ─── UI ──────────────────────────────────────────────────
     function injectStyles() {
-        const s = document.createElement('style');
-        s.textContent = `
+        const style = document.createElement('style');
+        style.textContent = `
             .amber-connect-bar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.75rem 1rem;margin-bottom:1.5rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.85rem;color:var(--text-secondary)}
             .amber-connect-btn{padding:.5rem 1.2rem;border:1px solid #f7931a;background:#f7931a;color:#fff;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
             .amber-connect-btn:hover{background:#e8850f}
@@ -246,56 +551,62 @@
             .amber-toast.error{border-color:#f87171;color:#f87171}
             @keyframes amberFadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         `;
-        document.head.appendChild(s);
+        document.head.appendChild(style);
     }
 
-    function showToast(msg, err) {
-        const t = document.createElement('div');
-        t.className = 'amber-toast' + (err ? ' error' : '');
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
+    function showToast(message, isError) {
+        const toast = document.createElement('div');
+        toast.className = 'amber-toast' + (isError ? ' error' : '');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
     function showConnectBar() {
-        const ref = document.querySelector('.search-box');
-        if (!ref) return;
+        const reference = document.querySelector('.search-box');
+        if (!reference || document.getElementById('amber-bar')) return;
+
         const bar = document.createElement('div');
         bar.className = 'amber-connect-bar';
         bar.id = 'amber-bar';
 
         const label = document.createElement('span');
-        label.textContent = '🤖 ¿Tienes Amber?';
+        label.textContent = 'Tienes Amber?';
 
-        // Use an <a> tag — browsers allow <a href="nostrsigner:..."> even if they block window.location
-        const btn = document.createElement('a');
-        btn.className = 'amber-connect-btn';
-        btn.textContent = '🔑 Conectar con Amber';
-        const cb = encodeURIComponent(CALLBACK_BASE + '?amber_pubkey=');
-        btn.href = `nostrsigner:?compressionType=none&returnType=signature&type=get_public_key&callbackUrl=${cb}`;
+        const button = document.createElement('a');
+        button.className = 'amber-connect-btn';
+        button.textContent = 'Conectar con Amber';
+        button.href = buildPublicKeyRequestUrl();
+        button.addEventListener('click', () => {
+            window.__NOSTRFACIL_PREFER_AMBER__ = true;
+        });
 
         bar.appendChild(label);
-        bar.appendChild(btn);
-        ref.parentNode.insertBefore(bar, ref);
+        bar.appendChild(button);
+        reference.parentNode.insertBefore(bar, reference);
     }
 
     function showLoginBar(hex) {
         const existing = document.getElementById('amber-bar');
         if (existing) existing.remove();
-        const ref = document.querySelector('.search-box');
-        if (!ref) return;
+
+        const reference = document.querySelector('.search-box');
+        if (!reference) return;
+
         const bar = document.createElement('div');
         bar.className = 'amber-login-bar';
         bar.id = 'amber-bar';
         bar.innerHTML = `
             <span class="status-dot"></span>
-            <span>Conectado vía Amber</span>
-            <span class="user-npub">${hex.slice(0,8)}...${hex.slice(-6)}</span>
-            <button class="amber-disconnect-btn" id="amber-disconnect">✕</button>
+            <span>Conectado via Amber</span>
+            <span class="user-npub">${hex.slice(0, 8)}...${hex.slice(-6)}</span>
+            <button class="amber-disconnect-btn" id="amber-disconnect">x</button>
         `;
-        ref.parentNode.insertBefore(bar, ref);
+        reference.parentNode.insertBefore(bar, reference);
+
         document.getElementById('amber-disconnect').addEventListener('click', () => {
-            try { Object.values(SK).forEach(k => sessionStorage.removeItem(k)); } catch {}
+            clearStoredKeys(Object.values(SK));
+            window.__NOSTRFACIL_PREFER_AMBER__ = false;
             location.reload();
         });
     }
@@ -304,75 +615,96 @@
         document.querySelectorAll('.profile-card').forEach(card => {
             if (card.querySelector('.follow-btn-amber')) return;
             if (!userPubkeyHex) return;
+
             const npub = card.dataset.npub;
             if (!npub) return;
+
             const hex = npubToHex(npub);
             if (!hex || hex === userPubkeyHex) return;
 
             const isFollowing = userContacts.has(hex);
-            const btn = document.createElement('button');
-            btn.className = 'follow-btn-amber' + (isFollowing ? ' following' : '');
-            btn.textContent = isFollowing ? '✓ Siguiendo' : 'Follow';
-            btn.disabled = isFollowing;
-            btn.addEventListener('click', () => followWithAmber(hex, btn));
+            const button = document.createElement('button');
+            button.className = 'follow-btn-amber' + (isFollowing ? ' following' : '');
+            button.textContent = isFollowing ? 'Siguiendo' : 'Follow';
+            button.disabled = isFollowing;
+            button.addEventListener('click', () => followWithAmber(hex, button));
 
-            const lp = card.querySelector('.profile-link');
-            if (lp) { lp.classList.add('profile-actions'); lp.insertBefore(btn, lp.firstChild); }
+            const linkParent = card.querySelector('.profile-link');
+            if (linkParent) {
+                linkParent.classList.add('profile-actions');
+                linkParent.insertBefore(button, linkParent.firstChild);
+            }
         });
     }
 
-    function waitForDirectory(cb) {
-        const dir = document.getElementById('directory');
-        if (!dir) { cb(); return; }
-        if (dir.querySelector('.profile-card')) { cb(); return; }
-        const obs = new MutationObserver((_, o) => { if (dir.querySelector('.profile-card')) { o.disconnect(); cb(); } });
-        obs.observe(dir, { childList: true });
-        setTimeout(() => { obs.disconnect(); cb(); }, 5000);
+    function waitForDirectory(callback) {
+        const directory = document.getElementById('directory');
+        if (!directory) {
+            callback();
+            return;
+        }
+
+        if (directory.querySelector('.profile-card')) {
+            callback();
+            return;
+        }
+
+        const observer = new MutationObserver((_, currentObserver) => {
+            if (directory.querySelector('.profile-card')) {
+                currentObserver.disconnect();
+                callback();
+            }
+        });
+        observer.observe(directory, { childList: true });
+        setTimeout(() => {
+            observer.disconnect();
+            callback();
+        }, 5000);
     }
 
-    // ─── Init ────────────────────────────────────────────────
-    // CRITICAL: Process callbacks IMMEDIATELY, before any delays
-    // Otherwise the pubkey param gets lost on page init
     async function processCallbacksEarly() {
-        const url = window.location.href;
-        if (url.includes('amber_pubkey=') || url.includes('amber_event=')) {
+        if (getCallbackValue('amber_pubkey') !== null || getCallbackValue('amber_event') !== null) {
             console.log('[amber] Detected callback in URL, processing...');
+            window.__NOSTRFACIL_PREFER_AMBER__ = true;
             return await handleAmberReturn();
         }
         return null;
     }
 
     async function init() {
-        // Step 1: Process any Amber callbacks IMMEDIATELY
         const callbackResult = await processCallbacksEarly();
 
-        // Step 2: Restore session
         if (!userPubkeyHex) {
-            try { userPubkeyHex = sessionStorage.getItem(SK.PUBKEY); } catch {}
+            userPubkeyHex = getStoredValue(SK.PUBKEY);
         }
 
-        // Step 3: Wait for NIP-07 detection
-        await new Promise(r => setTimeout(r, 700));
-        if (hasNip07()) return; // nostr-follow.js handles desktop
-        if (!isAndroid()) return;
+        const hasAmberSession = !!userPubkeyHex;
+        if (callbackResult !== null || (hasAmberSession && isAndroid())) {
+            window.__NOSTRFACIL_PREFER_AMBER__ = true;
+        }
 
-        console.log('[amber] Android detected, no NIP-07. Activating Amber support.');
+        await new Promise(resolve => setTimeout(resolve, 700));
+
+        if (callbackResult === null && !hasAmberSession) {
+            if (hasNip07()) return;
+            if (!isAndroid()) return;
+        }
+
         injectStyles();
 
-        // Show toasts from callback results
-        if (callbackResult === 'follow_ok') showToast('✓ Follow realizado con éxito');
-        else if (callbackResult === 'follow_error') showToast('✗ Error al publicar', true);
-        else if (callbackResult === 'error') showToast('✗ Error con firma de Amber', true);
+        if (callbackResult === 'follow_ok') showToast('Follow realizado con exito');
+        else if (callbackResult === 'follow_error') showToast('No se pudo publicar el follow', true);
+        else if (callbackResult === 'pubkey_error') showToast('Amber volvio pero no pudimos leer la autorizacion', true);
+        else if (callbackResult === 'error') showToast('No se pudo leer el evento firmado de Amber', true);
 
         if (userPubkeyHex) {
-            console.log('[amber] Session active:', userPubkeyHex.slice(0, 12) + '...');
-            amberReady = true;
+            window.__NOSTRFACIL_PREFER_AMBER__ = true;
             showLoginBar(userPubkeyHex);
             loadCachedContacts();
             waitForDirectory(() => {
                 addFollowButtons();
                 loadUserContacts().then(() => {
-                    document.querySelectorAll('.follow-btn-amber').forEach(b => b.remove());
+                    document.querySelectorAll('.follow-btn-amber').forEach(button => button.remove());
                     addFollowButtons();
                 });
             });
@@ -380,8 +712,10 @@
             showConnectBar();
         }
 
-        const dir = document.getElementById('directory');
-        if (dir) new MutationObserver(() => setTimeout(addFollowButtons, 100)).observe(dir, { childList: true });
+        const directory = document.getElementById('directory');
+        if (directory) {
+            new MutationObserver(() => setTimeout(addFollowButtons, 100)).observe(directory, { childList: true });
+        }
     }
 
     if (document.readyState === 'loading') {
