@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-04-04T22:06:25.921653+00:00",
-  "total_profiles": 28,
+  "updated_at": "2026-04-05T11:53:17.078933+00:00",
+  "total_profiles": 29,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -169,6 +169,12 @@
       "display_name": "Kilombino",
       "njump_url": "https://njump.me/npub1qqqqqqzs0udz0dpa93ra5thgycmcmwsqw5qave53ltdrd75nrptqv5h62x",
       "added_at": "2026-03-29T07:01:31.688933+00:00"
+    },
+    {
+      "npub": "npub1gljn28whw56ypd0r8eqfmw2r2l66qhep0tqhzfm0cwwfgjwljtas0dp02y",
+      "display_name": "Juanca22",
+      "njump_url": "https://njump.me/npub1gljn28whw56ypd0r8eqfmw2r2l66qhep0tqhzfm0cwwfgjwljtas0dp02y",
+      "added_at": "2026-04-04T22:06:25.508316+00:00"
     }
   ]
 }
