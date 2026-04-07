@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-04-07T17:59:36.736766+00:00",
-  "total_profiles": 29,
+  "updated_at": "2026-04-07T17:59:53.462546+00:00",
+  "total_profiles": 30,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -175,6 +175,12 @@
       "display_name": "Juanca22",
       "njump_url": "https://njump.me/npub1gljn28whw56ypd0r8eqfmw2r2l66qhep0tqhzfm0cwwfgjwljtas0dp02y",
       "added_at": "2026-04-04T22:06:25.508316+00:00"
+    },
+    {
+      "npub": "npub1ejq222ssadw935gs6c0fqhl4rmysa8h5stex6ge2mur3sm0crmusnjw3zf",
+      "display_name": "vict0rl0pez",
+      "njump_url": "https://njump.me/npub1ejq222ssadw935gs6c0fqhl4rmysa8h5stex6ge2mur3sm0crmusnjw3zf",
+      "added_at": "2026-04-07T17:59:35.863366+00:00"
     }
   ]
 }
