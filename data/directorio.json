@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-07-02T06:46:17.328192+00:00",
-  "total_profiles": 32,
+  "updated_at": "2026-07-02T06:46:33.607552+00:00",
+  "total_profiles": 31,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -187,12 +187,6 @@
       "display_name": "ChemicalAres",
       "njump_url": "https://njump.me/npub15c65luc5kmxmsutd8vsmj2yx7y2yrga3p4nv37as6usjc4y72z2scavspv",
       "added_at": "2026-05-07T20:06:44.197011+00:00"
-    },
-    {
-      "npub": "npub1t57280vxlz7zkndcmr04ucrh6zx702l57kw2nn5rx8v93h9trn0smjd32t",
-      "display_name": "castellano73",
-      "njump_url": "https://njump.me/npub1t57280vxlz7zkndcmr04ucrh6zx702l57kw2nn5rx8v93h9trn0smjd32t",
-      "added_at": "2026-07-01T19:12:31.806298+00:00"
     }
   ]
 }
