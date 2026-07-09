@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-07-09T08:41:30.611000+00:00",
-  "total_profiles": 30,
+  "updated_at": "2026-07-09T08:50:57.951531+00:00",
+  "total_profiles": 31,
   "profiles": [
     {
       "npub": "npub19yw2tgzv5tv7klsl5ffsdzuyuqedq7mnyzd08c2lqpmu70kt7vnqp6wvk3",
@@ -181,6 +181,12 @@
       "display_name": "ChemicalAres",
       "njump_url": "https://njump.me/npub15c65luc5kmxmsutd8vsmj2yx7y2yrga3p4nv37as6usjc4y72z2scavspv",
       "added_at": "2026-05-07T20:06:44.197011+00:00"
+    },
+    {
+      "npub": "npub1hjjhc33ddm7fl087t93y64gx7xguk5tt847vnqc3dwv54u58hzws520vwv",
+      "display_name": "DavidPeraltas",
+      "njump_url": "https://njump.me/npub1hjjhc33ddm7fl087t93y64gx7xguk5tt847vnqc3dwv54u58hzws520vwv",
+      "added_at": "2026-07-09T08:41:28.945602+00:00"
     }
   ]
 }
